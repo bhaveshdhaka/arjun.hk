@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#ffe29a" />
-  <title>Baby Boy's Restaurant</title>
+  <title>Baby Boy's Restaurant — Menu</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; }
@@ -14,465 +14,143 @@
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
       background: linear-gradient(160deg, #ffe29a 0%, #ffb3c1 55%, #b2e0ff 100%);
       color: #5a3a1a;
-      display: flex; align-items: center; justify-content: center;
-      height: 100vh; height: 100dvh; margin: 0;
-      text-align: center;
-      overflow: hidden;
+      min-height: 100vh; min-height: 100dvh;
+      padding: calc(1.5rem + env(safe-area-inset-top)) 1rem calc(2rem + env(safe-area-inset-bottom));
+      overflow-x: hidden;
       overscroll-behavior: none;
       touch-action: manipulation;
       -webkit-user-select: none; user-select: none;
-      -webkit-touch-callout: none;
     }
-    .screen {
-      width: 100%; height: 100%;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 1.1rem;
-      padding: calc(1rem + env(safe-area-inset-top)) 1rem calc(1.5rem + env(safe-area-inset-bottom));
-      position: relative;
-    }
-    .hidden { display: none !important; }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 2rem; }
     h1 {
-      font-size: clamp(2.2rem, 9vw, 4rem);
+      font-size: clamp(2.4rem, 10vw, 4.5rem);
       font-weight: 900;
       text-shadow: 0 3px 0 #fff8, 0 0 24px #ffffffaa;
       letter-spacing: -0.02em;
       line-height: 1.05;
+      animation: bob 2.4s ease-in-out infinite;
     }
-    .tagline { font-size: clamp(1rem, 3.6vw, 1.4rem); font-weight: 700; color: #7c4a2a; opacity: .9; }
-    .icons { font-size: clamp(2rem, 7vw, 2.8rem); letter-spacing: .4rem; animation: bob 2.4s ease-in-out infinite; }
-    .baby-row { font-size: clamp(2.6rem, 10vw, 4rem); animation: bob 1.8s ease-in-out infinite; }
     @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-    button.game-btn {
-      font-family: inherit;
-      font-size: clamp(1.5rem, 6vw, 2.2rem);
+    .badge {
+      display: inline-block;
+      font-size: clamp(1.2rem, 5vw, 1.8rem);
       font-weight: 900;
       color: #fff;
       background: linear-gradient(180deg, #ff8f5e, #ff5e7e);
-      border: none; border-radius: 999px;
-      padding: 1rem 2.6rem;
+      border-radius: 999px;
+      padding: .5rem 1.8rem;
+      margin-top: 1rem;
       box-shadow: 0 6px 0 #c9355a, 0 12px 24px #ff5e7e55;
-      cursor: pointer;
-      transition: transform .12s ease;
+      animation: pulse 1.8s ease-in-out infinite;
     }
-    button.game-btn:active { transform: translateY(5px) scale(.98); box-shadow: 0 2px 0 #c9355a; }
-    .pill {
-      font-weight: 800; font-size: clamp(.9rem, 3.6vw, 1.2rem);
-      background: #ffffffcc; border-radius: 999px; padding: .4rem .9rem;
-      box-shadow: 0 4px 12px #00000018;
-      font-family: inherit;
-      white-space: nowrap;
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+    .menu {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
     }
-    .speedbox { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
-    .speedlabel { font-weight: 900; font-size: clamp(1rem, 4.5vw, 1.4rem); color: #7c4a2a; }
-    #speed {
-      width: min(320px, 72vw);
-      height: 2.2rem;
-      accent-color: #ff5e7e;
+    .card {
+      background: #ffffffdd;
+      border-radius: 2rem;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 8px 24px #00000022, 0 4px 0 #ffffff88;
+      transition: transform .2s ease, box-shadow .2s ease;
+      animation: card-in .5s cubic-bezier(.34,1.56,.64,1) both;
     }
-    #speedName {
-      font-weight: 900; font-size: clamp(1rem, 4.5vw, 1.3rem); color: #5a3a1a;
-      background: #ffffffcc; border-radius: 999px; padding: .3rem 1.2rem;
-      box-shadow: 0 4px 10px #00000018;
+    .card:nth-child(1) { animation-delay: .1s; }
+    .card:nth-child(2) { animation-delay: .2s; }
+    .card:nth-child(3) { animation-delay: .3s; }
+    .card:nth-child(4) { animation-delay: .4s; }
+    .card:nth-child(5) { animation-delay: .5s; }
+    @keyframes card-in { 0% { transform: translateY(40px) scale(.9); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+    .card:active { transform: scale(.97); box-shadow: 0 4px 12px #00000022; }
+    .card-img {
+      width: 100%;
+      max-width: 200px;
+      height: auto;
+      margin: 0 auto 1rem;
+      display: block;
+      border-radius: 1rem;
+      background: #fff;
+      padding: .5rem;
+      box-shadow: inset 0 2px 8px #00000010;
+      animation: float 3s ease-in-out infinite;
     }
-    #game { justify-content: flex-start; padding-top: calc(1rem + env(safe-area-inset-top)); }
-    #hud { width: 100%; max-width: 760px; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
-    #timerbar-wrap { width: 100%; max-width: 760px; height: 14px; border-radius: 999px; background: #ffffffaa; overflow: hidden; box-shadow: inset 0 2px 4px #00000022; }
-    #timerbar { height: 100%; width: 100%; border-radius: 999px; background: linear-gradient(90deg,#ffd34d,#ff5e7e); transition: width .2s linear; }
-    #playfield { position: relative; flex: 1; width: 100%; max-width: 760px; overflow: hidden; }
-    .food {
-      position: absolute; top: -70px;
-      display: flex; flex-direction: column; align-items: center; gap: .3rem;
-      filter: drop-shadow(0 10px 14px #00000030);
-      will-change: transform;
-      pointer-events: none;
-    }
-    .food .f-emoji { font-size: clamp(3rem, 13vw, 5rem); line-height: 1; }
-    .food .f-name {
-      font-size: clamp(1.1rem, 5vw, 1.7rem);
-      font-weight: 900; color: #5a3a1a;
-      background: #ffffffdd; border-radius: 999px; padding: .15rem .9rem;
-      box-shadow: 0 4px 10px #00000022;
-      transition: background .15s ease;
-    }
-    .food .f-name.good { background: #bbf7d0; color: #14532d; }
-    .food .f-name.off { background: #fecaca; color: #7f1d1d; }
-    #cat {
-      display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center;
-      gap: 4px; max-width: 100%; min-height: 3rem;
-      transition: gap .2s ease;
-    }
-    #catHead { font-size: 2.6rem; line-height: 1; }
-    #cat.gulp { animation: chomp .4s ease; }
-    #cat.sad { animation: sadshake .5s ease; }
-    @keyframes chomp { 0%,100% { transform: scale(1); } 40% { transform: scale(1.18); } }
-    @keyframes sadshake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-9px); } 50% { transform: translateX(9px); } 75% { transform: translateX(-5px); } }
-    .seg {
-      width: 26px; height: 26px; border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #b9f6c0, #34d399);
-      box-shadow: inset 0 -4px 0 #05966988, 0 3px 5px #00000022;
-      transition: width .2s ease, height .2s ease;
-    }
-    #nom {
-      font-weight: 900; font-size: clamp(1.1rem, 5vw, 1.6rem);
-      color: #ff5e7e; text-shadow: 0 2px 0 #fff;
-      height: 1.4em; line-height: 1.4em;
-    }
-    #nom.show { animation: yum-up .9s ease forwards; }
-    @keyframes yum-up { 0% { opacity: 0; transform: translateY(10px) scale(.6); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(-34px) scale(1.25); } }
-    #typebar { width: 100%; max-width: 760px; display: flex; justify-content: center; }
-    #wordInput {
-      width: 100%; max-width: 480px;
-      font-family: inherit;
+    .card:nth-child(2) .card-img { animation-delay: .3s; }
+    .card:nth-child(3) .card-img { animation-delay: .6s; }
+    .card:nth-child(4) .card-img { animation-delay: .9s; }
+    .card:nth-child(5) .card-img { animation-delay: 1.2s; }
+    @keyframes float { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-8px) rotate(2deg); } }
+    .card-name {
       font-size: clamp(1.4rem, 6vw, 2rem);
-      font-weight: 800; color: #5a3a1a; text-align: center;
-      background: #ffffff; border: 4px solid #ff8f5e; border-radius: 999px;
-      padding: .7rem 1.4rem;
-      box-shadow: 0 6px 0 #c9355a88, 0 10px 22px #00000025;
-      outline: none;
-      -webkit-appearance: none;
+      font-weight: 900;
+      color: #5a3a1a;
+      margin-bottom: .5rem;
     }
-    #wordInput::placeholder { color: #d9a88b; }
-    #wordInput:focus { border-color: #34d399; box-shadow: 0 6px 0 #05966988, 0 10px 22px #00000025; }
-    .confetti { position: fixed; top: -20px; z-index: 50; pointer-events: none; border-radius: 3px; animation: fall linear forwards; }
-    @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
-    .big-num { font-size: clamp(3rem, 14vw, 5rem); font-weight: 900; line-height: 1; }
-    .stars { font-size: clamp(2rem, 10vw, 3.4rem); letter-spacing: .3rem; }
-    #fatcat { font-size: clamp(1.3rem, 5vw, 2rem); letter-spacing: 2px; line-height: 1.6; }
-    @media (max-height: 500px) {
-      h1 { font-size: clamp(1.6rem, 6vw, 2.4rem); }
-      .icons { font-size: clamp(1.5rem, 6vw, 2.2rem); }
-      .baby-row { font-size: clamp(2rem, 9vw, 3rem); }
-      .food .f-emoji { font-size: clamp(2.4rem, 10vw, 3.6rem); }
+    .card-price {
+      font-size: clamp(1.2rem, 5vw, 1.6rem);
+      font-weight: 800;
+      color: #ff5e7e;
+      background: #fff0f5;
+      border-radius: 999px;
+      padding: .3rem 1rem;
+      display: inline-block;
+    }
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      font-size: clamp(1rem, 4vw, 1.3rem);
+      font-weight: 700;
+      color: #7c4a2a;
+      opacity: .8;
+    }
+    @media (max-width: 480px) {
+      .menu { grid-template-columns: 1fr; }
+    }
+    @media (min-width: 481px) and (max-width: 768px) {
+      .menu { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 769px) {
+      .menu { grid-template-columns: repeat(3, 1fr); }
     }
   </style>
 </head>
 <body>
-
-  <div id="home" class="screen">
-    <div class="icons">🍔🍕🍩🍎🍟🥟🍓🧁</div>
-    <h1>Baby Boy's<br />Restaurant</h1>
-    <p class="tagline">Coming soon… but first, feed the hungry caterpillar all the foods!</p>
-    <div class="baby-row">🐛🍽️</div>
-    <div class="speedbox">
-      <span class="speedlabel">Speed</span>
-      <input type="range" id="speed" min="0" max="100" value="60" />
-      <span id="speedName">🐛 Just right</span>
+  <div class="container">
+    <header>
+      <h1>Baby Boy's<br />Restaurant</h1>
+      <div class="badge">Now Open! 🎉</div>
+    </header>
+    <div class="menu">
+      <div class="card">
+        <img class="card-img" src="images/cheese.png" alt="Cheese plate with grapes" />
+        <div class="card-name">Cheese</div>
+        <div class="card-price">$13 dollarbucks</div>
+      </div>
+      <div class="card">
+        <img class="card-img" src="images/matcha.png" alt="Matcha latte with heart" />
+        <div class="card-name">Matcha</div>
+        <div class="card-price">$16 dollarbucks</div>
+      </div>
+      <div class="card">
+        <img class="card-img" src="images/bagel.png" alt="Bagel with cream cheese" />
+        <div class="card-name">Bagel</div>
+        <div class="card-price">$20 dollarbucks</div>
+      </div>
+      <div class="card">
+        <img class="card-img" src="images/cream.png" alt="Cream tub with knife" />
+        <div class="card-name">Cream</div>
+        <div class="card-price">$19 dollarbucks</div>
+      </div>
+      <div class="card">
+        <img class="card-img" src="images/icecream.png" alt="Chocolate ice cream cone" />
+        <div class="card-name">Ice-Cream</div>
+        <div class="card-price">$18 dollarbucks</div>
+      </div>
     </div>
-    <button id="startBtn" class="game-btn">Let's Type! ⌨️</button>
+    <footer> Come feed the caterpillar after lunch! 🐛</footer>
   </div>
-
-  <div id="game" class="screen hidden">
-    <div id="hud">
-      <span class="pill">🐛 <span id="score">0</span></span>
-      <span class="pill" id="time">60</span>
-      <span class="pill">🥺 <span id="missed">0</span></span>
-    </div>
-    <div id="timerbar-wrap"><div id="timerbar"></div></div>
-    <div id="playfield"></div>
-    <div id="nom"></div>
-    <div id="cat"><div class="seg"></div><div class="seg"></div><div class="seg"></div><span id="catHead">🐛</span></div>
-    <div id="typebar">
-      <input id="wordInput" type="text" inputmode="text" enterkeyhint="done"
-             placeholder="type the food…"
-             autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
-    </div>
-  </div>
-
-  <div id="end" class="screen hidden">
-    <div class="stars" id="stars">⭐</div>
-    <div class="big-num" id="finalScore">0</div>
-    <p class="tagline" id="endMsg">Yay!</p>
-    <div id="fatcat">🐛</div>
-    <div class="baby-row">👶🍼</div>
-    <button id="againBtn" class="game-btn">Play Again! 🔁</button>
-    <button id="homeBtn" class="pill">🏠 Home</button>
-  </div>
-
-  <script>
-    const $ = (id) => document.getElementById(id);
-    const menu = [
-      ['apple','🍎'],['greenapple','🍏'],['pear','🍐'],['orange','🍊'],['lemon','🍋'],
-      ['banana','🍌'],['watermelon','🍉'],['grapes','🍇'],['strawberry','🍓'],['melon','🍈'],
-      ['cherry','🍒'],['peach','🍑'],['mango','🥭'],['pineapple','🍍'],['coconut','🥥'],
-      ['kiwi','🥝'],['avocado','🥑'],['tomato','🍅'],['eggplant','🍆'],['potato','🥔'],
-      ['sweetpotato','🍠'],['carrot','🥕'],['corn','🌽'],['pepper','🌶️'],['bellpepper','🫑'],
-      ['cucumber','🥒'],['lettuce','🥬'],['broccoli','🥦'],['garlic','🧄'],['onion','🧅'],
-      ['mushroom','🍄'],['peanuts','🥜'],['chestnut','🌰'],['olive','🫒'],['beans','🫘'],
-      ['bread','🍞'],['croissant','🥐'],['bagel','🥯'],['pretzel','🥨'],['pancake','🥞'],
-      ['waffle','🧇'],['cheese','🧀'],['butter','🧈'],['sandwich','🥪'],['fries','🍟'],
-      ['burger','🍔'],['pizza','🍕'],['hotdog','🌭'],['taco','🌮'],['burrito','🌯'],
-      ['tamale','🫔'],['falafel','🧆'],['dumpling','🥟'],['rice','🍚'],['riceball','🍙'],
-      ['curry','🍛'],['ramen','🍜'],['spaghetti','🍝'],['bento','🍱'],['sushi','🍣'],
-      ['shrimp','🍤'],['fishcake','🍥'],['stew','🍲'],['bowl','🥣'],['steak','🥩'],
-      ['bacon','🥓'],['drumstick','🍗'],['meat','🍖'],['egg','🍳'],['can','🥫'],
-      ['salad','🥗'],['popcorn','🍿'],['salt','🧂'],['cookie','🍪'],['donut','🍩'],
-      ['cupcake','🧁'],['cake','🍰'],['pie','🥧'],['chocolate','🍫'],['candy','🍬'],
-      ['lollipop','🍭'],['pudding','🍮'],['icecream','🍦'],['sundae','🍨'],['ice','🍧'],
-      ['dango','🍡'],['oden','🍢'],['cracker','🍘'],['honey','🍯'],['mooncake','🥮'],
-      ['fortune','🥠'],['milk','🥛'],['juice','🧃'],['soda','🥤'],['boba','🧋'],
-      ['tea','🍵'],['coffee','☕']
-    ];
-    const colors = ['#ff5e7e','#ffd34d','#6ee7b7','#93c5fd','#c4b5fd','#fda4af'];
-    const DURATION = 60;
-
-    let score = 0, missed = 0, timeLeft = DURATION, running = false;
-    let timerId = null, targetWord = '', lastIndex = -1, speedMult = 1.12;
-    const playfield = $('playfield');
-    const input = $('wordInput');
-    const cat = $('cat');
-    const catHead = $('catHead');
-
-    const speed = $('speed');
-    const speedName = $('speedName');
-    function updateSpeed() {
-      const v = Number(speed.value);
-      speedMult = 1.9 - (v / 100) * 1.3;
-      speedName.textContent =
-        v < 25 ? '🐢 Super slow' :
-        v < 50 ? '🐌 Slow' :
-        v < 75 ? '🐛 Just right' :
-        v < 90 ? '🏃 Fast' : '🐇 Super fast';
-    }
-    speed.addEventListener('input', updateSpeed);
-    updateSpeed();
-
-    let audioCtx = null;
-    function audio() {
-      if (!audioCtx) {
-        const AC = window.AudioContext || window.webkitAudioContext;
-        if (!AC) return null;
-        audioCtx = new AC();
-      }
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      return audioCtx;
-    }
-    function tone(freq, dur, type = 'sine', vol = 0.18, when = 0) {
-      const ctx = audio();
-      if (!ctx) return;
-      const t = ctx.currentTime + when;
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.type = type; o.frequency.setValueAtTime(freq, t);
-      g.gain.setValueAtTime(vol, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(t); o.stop(t + dur);
-    }
-    const keyTap = () => tone(440, .06, 'triangle', .12);
-    const gulp = () => {
-      const ctx = audio();
-      if (!ctx) return;
-      const t = ctx.currentTime;
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      const f = ctx.createBiquadFilter();
-      const lfo = ctx.createOscillator();
-      const lfoGain = ctx.createGain();
-      o.type = 'sawtooth';
-      o.frequency.setValueAtTime(330, t);
-      o.frequency.exponentialRampToValueAtTime(110, t + 0.6);
-      f.type = 'lowpass';
-      f.frequency.setValueAtTime(950, t);
-      f.frequency.exponentialRampToValueAtTime(320, t + 0.6);
-      lfo.frequency.setValueAtTime(9, t);
-      lfoGain.gain.setValueAtTime(22, t);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.5, t + 0.05);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
-      lfo.connect(lfoGain); lfoGain.connect(o.frequency);
-      o.connect(f); f.connect(g); g.connect(ctx.destination);
-      o.start(t); lfo.start(t);
-      o.stop(t + 0.8); lfo.stop(t + 0.8);
-    };
-    const sad = () => { [440, 392, 349].forEach((f,i)=>tone(f,.22,'triangle',.14,i*.15)); };
-    const yay = () => { [523,659,784,1046].forEach((f,i)=>tone(f,.18,'sine',.16,i*.08)); };
-
-    function pickFood() {
-      let i;
-      do { i = Math.floor(Math.random() * menu.length); } while (i === lastIndex);
-      lastIndex = i;
-      return menu[i];
-    }
-
-    function spawnFood() {
-      if (!running) return;
-      const [word, emoji] = pickFood();
-      targetWord = word;
-      const f = document.createElement('div');
-      f.className = 'food';
-      f.innerHTML = '<span class="f-emoji">' + emoji + '</span><span class="f-name">' + word + '</span>';
-      const pw = playfield.clientWidth;
-      f.style.left = (20 + Math.random() * Math.max(pw - 220, 20)) + 'px';
-      playfield.appendChild(f);
-      const fallDist = playfield.clientHeight + 150;
-      const durMs = (word.length * 0.45 + 1.2) * speedMult * 1000;
-      const start = performance.now();
-      let lastP = 0;
-      const step = (now) => {
-        if (!running || f._done) return;
-        const p = Math.min(1, (now - start) / durMs);
-        lastP = p;
-        const scale = p < 0.1 ? p * 10 : 1;
-        f.style.transform = 'translateX(-50%) translateY(' + (p * fallDist) + 'px) scale(' + scale + ')';
-        if (p >= 1) { missFood(f); return; }
-        f._raf = requestAnimationFrame(step);
-      };
-      f._raf = requestAnimationFrame(step);
-    }
-
-    function flyToMouth(f, done) {
-      const r = f.getBoundingClientRect();
-      const hr = catHead.getBoundingClientRect();
-      const dx = (hr.left + hr.width / 2) - (r.left + r.width / 2);
-      const dy = (hr.top + hr.height / 2) - (r.top + r.height / 2);
-      const startTx = getComputedStyle(f).transform;
-      const anim = f.animate([
-        { transform: startTx, opacity: 1, offset: 0 },
-        { transform: 'translate(' + dx * 0.7 + 'px,' + dy * 0.7 + 'px) scale(.5)', opacity: 1, offset: 0.7 },
-        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.05)', opacity: 1, offset: 1 }
-      ], { duration: 460, easing: 'cubic-bezier(.5,-0.25,.75,.5)' });
-      anim.onfinish = done;
-    }
-
-    function eatFood() {
-      const f = playfield.querySelector('.food');
-      if (!f || f._done) return;
-      f._done = 1;
-      cancelAnimationFrame(f._raf);
-      tone(190, .1, 'square', .15);
-      flyToMouth(f, () => {
-        if (f.isConnected) f.remove();
-        if (running) {
-          gulp();
-          setTimeout(spawnFood, 150);
-        }
-      });
-      score++;
-      $('score').textContent = score;
-      grow();
-      const nomEl = $('nom');
-      nomEl.textContent = ['Nom nom!','Yum yum!','So yummy!','Munch munch!','Tasty!','Crunch!','Ummh!','Mmm!'][Math.floor(Math.random()*8)];
-      nomEl.classList.remove('show'); void nomEl.offsetWidth; nomEl.classList.add('show');
-      input.value = '';
-      input.focus();
-    }
-
-    function missFood(f) {
-      if (f._done) return;
-      f._done = 1;
-      cancelAnimationFrame(f._raf);
-      const anim = f.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
-      anim.onfinish = () => f.remove();
-      missed++;
-      $('missed').textContent = missed;
-      sad();
-      const nomEl = $('nom');
-      nomEl.textContent = 'Aww! 🥺';
-      nomEl.classList.remove('show'); void nomEl.offsetWidth; nomEl.classList.add('show');
-      catHead.textContent = '🥺';
-      cat.classList.remove('sad'); void cat.offsetWidth; cat.classList.add('sad');
-      setTimeout(() => { if (running) catHead.textContent = '🐛'; }, 1300);
-      input.value = '';
-      setTimeout(spawnFood, 450);
-    }
-
-    function grow() {
-      const s = document.createElement('div');
-      s.className = 'seg';
-      cat.insertBefore(s, catHead);
-      const n = cat.querySelectorAll('.seg').length;
-      const sz = Math.min(34, 21 + n * 0.8);
-      cat.querySelectorAll('.seg').forEach(x => { x.style.width = (sz * 1.15) + 'px'; x.style.height = sz + 'px'; });
-      catHead.style.fontSize = Math.min(4.8, 2.6 + n * 0.08) + 'rem';
-      cat.classList.remove('gulp'); void cat.offsetWidth; cat.classList.add('gulp');
-    }
-
-    function startGame() {
-      score = 0; missed = 0; timeLeft = DURATION; running = true;
-      $('score').textContent = '0';
-      $('missed').textContent = '0';
-      $('time').textContent = DURATION;
-      $('timerbar').style.width = '100%';
-      playfield.innerHTML = '';
-      cat.querySelectorAll('.seg').forEach(s => s.remove());
-      catHead.style.fontSize = '';
-      for (let i = 0; i < 3; i++) grow();
-      catHead.textContent = '🐛';
-      input.value = '';
-      $('home').classList.add('hidden');
-      $('end').classList.add('hidden');
-      $('game').classList.remove('hidden');
-      input.focus();
-      clearInterval(timerId);
-      spawnFood();
-      timerId = setInterval(() => {
-        timeLeft--;
-        $('time').textContent = timeLeft;
-        $('timerbar').style.width = (timeLeft / DURATION * 100) + '%';
-        if (timeLeft <= 0) endGame();
-      }, 1000);
-    }
-
-    function endGame() {
-      running = false;
-      clearInterval(timerId);
-      playfield.innerHTML = '';
-      input.blur();
-      yay();
-      $('finalScore').textContent = score;
-      let msg, stars;
-      if (score >= 25) { msg = 'WOW! What a chubby happy caterpillar!'; stars = '⭐⭐⭐⭐⭐'; }
-      else if (score >= 15) { msg = 'Great job! The caterpillar is so full!'; stars = '⭐⭐⭐⭐'; }
-      else if (score >= 8) { msg = 'Yay! The caterpillar got a yummy snack!'; stars = '⭐⭐⭐'; }
-      else if (score >= 3) { msg = 'Good try, caterpillar had a little taste!'; stars = '⭐⭐'; }
-      else { msg = 'Uh oh, caterpillar is still hungry!'; stars = '⭐'; }
-      if (missed === 0) { msg += ' PERFECT — nothing got away!'; }
-      else if (missed <= 2) { msg += ' Only ' + missed + ' got away!'; }
-      else { msg += ' ' + missed + ' foods got away. Let\'s catch them next time!'; }
-      $('endMsg').textContent = msg;
-      $('stars').textContent = stars;
-      $('fatcat').textContent = '🐛' + '🟢'.repeat(Math.min(score * 2, 46));
-      $('game').classList.add('hidden');
-      $('end').classList.remove('hidden');
-      confetti();
-    }
-
-    function confetti() {
-      for (let i = 0; i < 60; i++) {
-        const c = document.createElement('div');
-        c.className = 'confetti';
-        c.style.left = Math.random() * 100 + 'vw';
-        c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
-        c.style.background = colors[Math.floor(Math.random() * colors.length)];
-        c.style.animationDuration = (1.4 + Math.random() * 1.6) + 's';
-        c.style.animationDelay = (Math.random() * .8) + 's';
-        document.body.appendChild(c);
-        setTimeout(() => c.remove(), 3800);
-      }
-    }
-
-    input.addEventListener('input', () => {
-      if (!running) return;
-      const v = input.value.toLowerCase().replace(/\s+/g, '');
-      const label = playfield.querySelector('.food .f-name');
-      if (!label) return;
-      if (v === targetWord) { eatFood(); return; }
-      label.className = 'f-name' + (v.length === 0 ? '' : (targetWord.startsWith(v) ? ' good' : ' off'));
-    });
-
-    input.addEventListener('keydown', (e) => {
-      if (!running) return;
-      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); return; }
-      if (!e.ctrlKey && !e.metaKey && e.key.length === 1) keyTap();
-    });
-
-    $('startBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); audio(); startGame(); });
-    $('againBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); audio(); startGame(); });
-    $('homeBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); audio();
-      clearInterval(timerId); running = false;
-      $('end').classList.add('hidden');
-      $('home').classList.remove('hidden');
-    });
-  </script>
 </body>
 </html>
