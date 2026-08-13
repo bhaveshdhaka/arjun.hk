@@ -36,3 +36,8 @@ dashboard or hit the trigger endpoint.
   `/srv/secrets/coolify-api`; also stored as GitHub Actions `COOLIFY_TOKEN`.
 - Deploy trigger endpoint: `POST /api/v1/applications/<uuid>/start`.
 - Single app: **arjun.hk** `pexxwuld0pa8q9bnwhnriqbl` (pulls `:main`).
+## oc-infra vs oc-dev (read on this box)
+
+- The agent that manages the server (Coolify, Cloudflare, containers, /srv, secrets) is **oc-infra**: oc-infra.bhavesh.hk, host-level, no single git project. Its global guide is `/srv/AGENTS.md`.
+- The agent that works on THIS repo (code, CI, PRs, ship) is **oc-dev**: oc-dev.bhavesh.hk, restricted perms.
+- Full authoritative doc: `/srv/AGENTS.md`. Keep it and this file in sync.
