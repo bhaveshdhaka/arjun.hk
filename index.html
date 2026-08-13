@@ -62,6 +62,18 @@
       font-family: inherit;
       white-space: nowrap;
     }
+    .speedbox { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+    .speedlabel { font-weight: 900; font-size: clamp(1rem, 4.5vw, 1.4rem); color: #7c4a2a; }
+    #speed {
+      width: min(320px, 72vw);
+      height: 2.2rem;
+      accent-color: #ff5e7e;
+    }
+    #speedName {
+      font-weight: 900; font-size: clamp(1rem, 4.5vw, 1.3rem); color: #5a3a1a;
+      background: #ffffffcc; border-radius: 999px; padding: .3rem 1.2rem;
+      box-shadow: 0 4px 10px #00000018;
+    }
     #game { justify-content: flex-start; padding-top: calc(1rem + env(safe-area-inset-top)); }
     #hud { width: 100%; max-width: 760px; display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
     #timerbar-wrap { width: 100%; max-width: 760px; height: 14px; border-radius: 999px; background: #ffffffaa; overflow: hidden; box-shadow: inset 0 2px 4px #00000022; }
@@ -69,9 +81,7 @@
     #playfield { position: relative; flex: 1; width: 100%; max-width: 760px; overflow: hidden; }
     .food {
       position: absolute; top: -70px;
-      left: 50%;
       display: flex; flex-direction: column; align-items: center; gap: .3rem;
-      animation: drop var(--dur) linear forwards;
       filter: drop-shadow(0 10px 14px #00000030);
       will-change: transform;
       pointer-events: none;
@@ -86,25 +96,13 @@
     }
     .food .f-name.good { background: #bbf7d0; color: #14532d; }
     .food .f-name.off { background: #fecaca; color: #7f1d1d; }
-    .food.eaten { animation: gulp .38s cubic-bezier(.5,-0.3,.7,.5) forwards; }
-    .food.leaving { animation: fadeout .18s ease forwards; }
-    @keyframes drop {
-      0% { transform: translateX(-50%) translateY(0) scale(.3) rotate(-20deg); }
-      8% { transform: translateX(-50%) translateY(8px) scale(1.08) rotate(4deg); }
-      100% { transform: translateX(-50%) translateY(var(--fall)) scale(1) rotate(0); }
-    }
-    @keyframes gulp {
-      0% { transform: translateX(-50%) scale(1); opacity: 1; }
-      60% { transform: translateX(30%) translateY(30vh) scale(.6); opacity: 1; }
-      100% { transform: translateX(30%) translateY(38vh) scale(0); opacity: 0; }
-    }
-    @keyframes fadeout { 0% { transform: translateX(-50%) scale(1); opacity: 1; } 100% { transform: translateX(-50%) scale(.5); opacity: 0; } }
     #cat {
       display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center;
-      gap: 3px; max-width: 100%; min-height: 3rem;
+      gap: 4px; max-width: 100%; min-height: 3rem;
+      transition: gap .2s ease;
     }
-    #catHead { font-size: clamp(2.6rem, 10vw, 3.6rem); line-height: 1; }
-    #cat.gulp { animation: chomp .35s ease; }
+    #catHead { font-size: 2.6rem; line-height: 1; }
+    #cat.gulp { animation: chomp .4s ease; }
     #cat.sad { animation: sadshake .5s ease; }
     @keyframes chomp { 0%,100% { transform: scale(1); } 40% { transform: scale(1.18); } }
     @keyframes sadshake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-9px); } 50% { transform: translateX(9px); } 75% { transform: translateX(-5px); } }
@@ -112,6 +110,7 @@
       width: 26px; height: 26px; border-radius: 50%;
       background: radial-gradient(circle at 35% 30%, #b9f6c0, #34d399);
       box-shadow: inset 0 -4px 0 #05966988, 0 3px 5px #00000022;
+      transition: width .2s ease, height .2s ease;
     }
     #nom {
       font-weight: 900; font-size: clamp(1.1rem, 5vw, 1.6rem);
@@ -154,6 +153,11 @@
     <h1>Baby Boy's<br />Restaurant</h1>
     <p class="tagline">Coming soon… but first, feed the hungry caterpillar all the foods!</p>
     <div class="baby-row">🐛🍽️</div>
+    <div class="speedbox">
+      <span class="speedlabel">Speed</span>
+      <input type="range" id="speed" min="0" max="100" value="60" />
+      <span id="speedName">🐛 Just right</span>
+    </div>
     <button id="startBtn" class="game-btn">Let's Type! ⌨️</button>
   </div>
 
@@ -212,11 +216,25 @@
     const DURATION = 60;
 
     let score = 0, missed = 0, timeLeft = DURATION, running = false;
-    let timerId = null, targetWord = '', lastIndex = -1;
+    let timerId = null, targetWord = '', lastIndex = -1, speedMult = 1.12;
     const playfield = $('playfield');
     const input = $('wordInput');
     const cat = $('cat');
     const catHead = $('catHead');
+
+    const speed = $('speed');
+    const speedName = $('speedName');
+    function updateSpeed() {
+      const v = Number(speed.value);
+      speedMult = 1.9 - (v / 100) * 1.3;
+      speedName.textContent =
+        v < 25 ? '🐢 Super slow' :
+        v < 50 ? '🐌 Slow' :
+        v < 75 ? '🐛 Just right' :
+        v < 90 ? '🏃 Fast' : '🐇 Super fast';
+    }
+    speed.addEventListener('input', updateSpeed);
+    updateSpeed();
 
     let audioCtx = null;
     function audio() {
@@ -265,7 +283,6 @@
       o.connect(f); f.connect(g); g.connect(ctx.destination);
       o.start(t); lfo.start(t);
       o.stop(t + 0.8); lfo.stop(t + 0.8);
-      tone(190, .08, 'square', .12);
     };
     const sad = () => { [440, 392, 349].forEach((f,i)=>tone(f,.22,'triangle',.14,i*.15)); };
     const yay = () => { [523,659,784,1046].forEach((f,i)=>tone(f,.18,'sine',.16,i*.08)); };
@@ -286,40 +303,66 @@
       f.innerHTML = '<span class="f-emoji">' + emoji + '</span><span class="f-name">' + word + '</span>';
       const pw = playfield.clientWidth;
       f.style.left = (20 + Math.random() * Math.max(pw - 220, 20)) + 'px';
-      const dur = word.length * 0.4 + 0.9;
-      f.style.setProperty('--dur', dur + 's');
-      f.style.setProperty('--fall', (playfield.clientHeight + 150) + 'px');
-      f.addEventListener('animationend', () => {
-        if (!running || !f.isConnected || f.dataset.done) return;
-        missFood(f);
-      });
       playfield.appendChild(f);
+      const fallDist = playfield.clientHeight + 150;
+      const durMs = (word.length * 0.45 + 1.2) * speedMult * 1000;
+      const start = performance.now();
+      let lastP = 0;
+      const step = (now) => {
+        if (!running || f._done) return;
+        const p = Math.min(1, (now - start) / durMs);
+        lastP = p;
+        const scale = p < 0.1 ? p * 10 : 1;
+        f.style.transform = 'translateX(-50%) translateY(' + (p * fallDist) + 'px) scale(' + scale + ')';
+        if (p >= 1) { missFood(f); return; }
+        f._raf = requestAnimationFrame(step);
+      };
+      f._raf = requestAnimationFrame(step);
+    }
+
+    function flyToMouth(f, done) {
+      const r = f.getBoundingClientRect();
+      const hr = catHead.getBoundingClientRect();
+      const dx = (hr.left + hr.width / 2) - (r.left + r.width / 2);
+      const dy = (hr.top + hr.height / 2) - (r.top + r.height / 2);
+      const startTx = getComputedStyle(f).transform;
+      const anim = f.animate([
+        { transform: startTx, opacity: 1, offset: 0 },
+        { transform: 'translate(' + dx * 0.7 + 'px,' + dy * 0.7 + 'px) scale(.5)', opacity: 1, offset: 0.7 },
+        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(.05)', opacity: 1, offset: 1 }
+      ], { duration: 460, easing: 'cubic-bezier(.5,-0.25,.75,.5)' });
+      anim.onfinish = done;
     }
 
     function eatFood() {
       const f = playfield.querySelector('.food');
-      if (f) {
-        if (f.dataset.done) return;
-        f.dataset.done = '1';
-        f.classList.add('eaten');
-        setTimeout(() => f.remove(), 400);
-      }
+      if (!f || f._done) return;
+      f._done = 1;
+      cancelAnimationFrame(f._raf);
+      tone(190, .1, 'square', .15);
+      flyToMouth(f, () => {
+        if (f.isConnected) f.remove();
+        if (running) {
+          gulp();
+          setTimeout(spawnFood, 150);
+        }
+      });
       score++;
       $('score').textContent = score;
-      grow(1);
-      gulp();
+      grow();
       const nomEl = $('nom');
       nomEl.textContent = ['Nom nom!','Yum yum!','So yummy!','Munch munch!','Tasty!','Crunch!','Ummh!','Mmm!'][Math.floor(Math.random()*8)];
       nomEl.classList.remove('show'); void nomEl.offsetWidth; nomEl.classList.add('show');
       input.value = '';
       input.focus();
-      setTimeout(spawnFood, 250);
     }
 
     function missFood(f) {
-      f.dataset.done = '1';
-      f.classList.add('leaving');
-      setTimeout(() => f.remove(), 200);
+      if (f._done) return;
+      f._done = 1;
+      cancelAnimationFrame(f._raf);
+      const anim = f.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+      anim.onfinish = () => f.remove();
       missed++;
       $('missed').textContent = missed;
       sad();
@@ -333,15 +376,15 @@
       setTimeout(spawnFood, 450);
     }
 
-    function grow(n) {
-      for (let i = 0; i < n; i++) {
-        const s = document.createElement('div');
-        s.className = 'seg';
-        cat.insertBefore(s, catHead);
-      }
+    function grow() {
+      const s = document.createElement('div');
+      s.className = 'seg';
+      cat.insertBefore(s, catHead);
+      const n = cat.querySelectorAll('.seg').length;
+      const sz = Math.min(34, 21 + n * 0.8);
+      cat.querySelectorAll('.seg').forEach(x => { x.style.width = (sz * 1.15) + 'px'; x.style.height = sz + 'px'; });
+      catHead.style.fontSize = Math.min(4.8, 2.6 + n * 0.08) + 'rem';
       cat.classList.remove('gulp'); void cat.offsetWidth; cat.classList.add('gulp');
-      const size = Math.max(18, 26 - Math.floor(score / 15));
-      cat.querySelectorAll('.seg').forEach(s => { s.style.width = size + 'px'; s.style.height = size + 'px'; });
     }
 
     function startGame() {
@@ -352,7 +395,8 @@
       $('timerbar').style.width = '100%';
       playfield.innerHTML = '';
       cat.querySelectorAll('.seg').forEach(s => s.remove());
-      for (let i = 0; i < 3; i++) grow(1);
+      catHead.style.fontSize = '';
+      for (let i = 0; i < 3; i++) grow();
       catHead.textContent = '🐛';
       input.value = '';
       $('home').classList.add('hidden');
