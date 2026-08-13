@@ -28,6 +28,8 @@ deployment end-to-end:
 **Verify live**: open `https://arjun.hk` (or `curl` it) and confirm your change
 is present. If Coolify didn't redeploy, check the deploy log in the Coolify
 dashboard or hit the trigger endpoint.
+**Standard protocol:** read **`docs/SHIP.md`** — the exact push commands, the Coolify webhook to watch, and the identical chat reply (with lead-time timing) every agent gives.
+
 
 **Key facts:**
 - Coolify API: `https://coolify.bhavesh.hk/api/v1`. Token:
