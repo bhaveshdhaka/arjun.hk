@@ -45,3 +45,12 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           provenance: false
+
+      # Trigger Coolify to pull the freshly published image. App UUID: arjun.hk.
+      - name: Trigger Coolify deploy
+        if: ${{ github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' }}
+        env:
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          curl -sf -X POST "https://coolify.bhavesh.hk/api/v1/applications/pexxwuld0pa8q9bnwhnriqbl/start" \
+            -H "Authorization: Bearer ${COOLIFY_TOKEN}" || echo "deploy trigger failed (non-fatal)"
