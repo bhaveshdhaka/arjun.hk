@@ -38,6 +38,11 @@ jobs:
             type=ref,event=branch
             type=sha,prefix=
 
+      # Fast builds: Docker layer caching makes repeat pushes near-instant
+      # instead of cold-rebuilding deps on every push.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -45,6 +50,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # Trigger Coolify to pull the freshly published image. App UUID: arjun.hk.
       - name: Trigger Coolify deploy
