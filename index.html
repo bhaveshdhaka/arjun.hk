@@ -19,13 +19,14 @@
       text-align: center;
       overflow: hidden;
       overscroll-behavior: none;
+      touch-action: manipulation;
       -webkit-user-select: none; user-select: none;
       -webkit-touch-callout: none;
     }
     .screen {
       width: 100%; height: 100%;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 1.2rem;
+      gap: 1.1rem;
       padding: calc(1rem + env(safe-area-inset-top)) 1rem calc(1.5rem + env(safe-area-inset-bottom));
       position: relative;
     }
@@ -38,13 +39,9 @@
       line-height: 1.05;
     }
     .tagline { font-size: clamp(1rem, 3.6vw, 1.4rem); font-weight: 700; color: #7c4a2a; opacity: .9; }
-    .icons {
-      font-size: clamp(2.6rem, 10vw, 4rem);
-      letter-spacing: 0.6rem;
-      animation: bob 2.4s ease-in-out infinite;
-    }
-    .baby-row { font-size: clamp(3rem, 12vw, 5rem); animation: bob 1.8s ease-in-out infinite; }
-    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+    .icons { font-size: clamp(2.4rem, 9vw, 3.6rem); letter-spacing: .5rem; animation: bob 2.4s ease-in-out infinite; }
+    .baby-row { font-size: clamp(2.6rem, 10vw, 4rem); animation: bob 1.8s ease-in-out infinite; }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
     button.game-btn {
       font-family: inherit;
       font-size: clamp(1.5rem, 6vw, 2.2rem);
@@ -55,7 +52,6 @@
       padding: 1rem 2.6rem;
       box-shadow: 0 6px 0 #c9355a, 0 12px 24px #ff5e7e55;
       cursor: pointer;
-      touch-action: manipulation;
       transition: transform .12s ease;
     }
     button.game-btn:active { transform: translateY(5px) scale(.98); box-shadow: 0 2px 0 #c9355a; }
@@ -63,104 +59,133 @@
       font-weight: 800; font-size: clamp(1rem, 4vw, 1.3rem);
       background: #ffffffcc; border-radius: 999px; padding: .5rem 1.2rem;
       box-shadow: 0 4px 12px #00000018;
+      font-family: inherit;
     }
-    #game {
-      justify-content: flex-start;
-      padding-top: calc(1.2rem + env(safe-area-inset-top));
-    }
-    #hud {
-      width: 100%; max-width: 760px;
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 1rem;
-    }
-    #timerbar-wrap {
-      width: 100%; max-width: 760px;
-      height: 14px; border-radius: 999px;
-      background: #ffffffaa; overflow: hidden;
-      box-shadow: inset 0 2px 4px #00000022;
-    }
+    #game { justify-content: flex-start; padding-top: calc(1.1rem + env(safe-area-inset-top)); }
+    #hud { width: 100%; max-width: 760px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    #timerbar-wrap { width: 100%; max-width: 760px; height: 14px; border-radius: 999px; background: #ffffffaa; overflow: hidden; box-shadow: inset 0 2px 4px #00000022; }
     #timerbar { height: 100%; width: 100%; border-radius: 999px; background: linear-gradient(90deg,#ffd34d,#ff5e7e); transition: width .2s linear; }
-    #playfield {
-      position: relative; flex: 1; width: 100%; max-width: 760px;
-    }
+    #playfield { position: relative; flex: 1; width: 100%; max-width: 760px; }
     .food {
-      position: absolute; cursor: pointer;
-      touch-action: manipulation;
-      animation: pop-in .22s cubic-bezier(.34,1.56,.64,1);
-      filter: drop-shadow(0 8px 12px #00000030);
+      position: absolute; left: 50%; top: 18%;
+      transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: .4rem;
+      animation: pop-in .3s cubic-bezier(.34,1.56,.64,1), drift 3.6s ease-in-out .3s infinite alternate;
+      filter: drop-shadow(0 10px 14px #00000030);
+      transition: transform .2s ease;
     }
-    .food.leaving { animation: pop-out .18s ease forwards; }
-    .food.flutter { animation: wiggle .5s ease; }
-    @keyframes pop-in { 0% { transform: scale(0) rotate(-30deg); } 100% { transform: scale(1) rotate(0); } }
-    @keyframes pop-out { 0% { transform: scale(1); } 100% { transform: scale(0) translateY(40px); opacity: 0; } }
-    @keyframes wiggle { 0%,100% { transform: rotate(-12deg) scale(1); } 50% { transform: rotate(12deg) scale(1.12); } }
-    #baby {
-      font-size: clamp(3.4rem, 14vw, 5.5rem);
-      line-height: 1;
-      position: relative;
-      animation: bob 1.8s ease-in-out infinite;
+    .food .f-emoji { font-size: clamp(4rem, 18vw, 7rem); line-height: 1; }
+    .food .f-name {
+      font-size: clamp(1.3rem, 6vw, 2rem);
+      font-weight: 900; color: #5a3a1a;
+      background: #ffffffdd; border-radius: 999px; padding: .2rem 1rem;
+      box-shadow: 0 4px 10px #00000022;
+      transition: background .15s ease;
     }
-    #yum {
-      position: absolute; top: -1.4rem; left: 50%; transform: translateX(-50%);
-      font-weight: 900; font-size: clamp(1.2rem, 5vw, 1.8rem);
+    .food .f-name.good { background: #bbf7d0; color: #14532d; }
+    .food .f-name.off { background: #fecaca; color: #7f1d1d; }
+    .food.eaten { animation: gulp .35s cubic-bezier(.5,-0.3,.7,.5) forwards; }
+    @keyframes pop-in { 0% { transform: translateX(-50%) scale(0) rotate(-20deg); } 100% { transform: translateX(-50%) scale(1) rotate(0); } }
+    @keyframes drift { 0% { transform: translateX(-50%) translateY(0) rotate(-3deg); } 100% { transform: translateX(-50%) translateY(-22px) rotate(3deg); } }
+    @keyframes gulp { 0% { transform: translateX(-50%) scale(1); opacity: 1; } 60% { transform: translateX(30%) translateY(35vh) scale(.6); opacity: 1; } 100% { transform: translateX(30%) translateY(38vh) scale(0); opacity: 0; } }
+    #cat {
+      display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: center;
+      gap: 3px; max-width: 100%; min-height: 3rem;
+    }
+    #catHead { font-size: clamp(2.6rem, 10vw, 3.6rem); line-height: 1; }
+    #cat.gulp { animation: chomp .35s ease; }
+    @keyframes chomp { 0%,100% { transform: scale(1); } 40% { transform: scale(1.18); } }
+    .seg {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #b9f6c0, #34d399);
+      box-shadow: inset 0 -4px 0 #05966988, 0 3px 5px #00000022;
+    }
+    #nom {
+      font-weight: 900; font-size: clamp(1.1rem, 5vw, 1.6rem);
       color: #ff5e7e; text-shadow: 0 2px 0 #fff;
-      opacity: 0;
+      height: 1.4em; line-height: 1.4em;
     }
-    #yum.show { animation: yum-up .8s ease forwards; }
-    @keyframes yum-up { 0% { opacity: 0; transform: translate(-50%, 12px) scale(.6); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -46px) scale(1.2); } }
-    .confetti {
-      position: fixed; top: -20px; z-index: 50;
-      pointer-events: none;
-      border-radius: 3px;
-      animation: fall linear forwards;
+    #nom.show { animation: yum-up .9s ease forwards; }
+    @keyframes yum-up { 0% { opacity: 0; transform: translateY(10px) scale(.6); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(-34px) scale(1.25); } }
+    #typebar { width: 100%; max-width: 760px; display: flex; justify-content: center; }
+    #wordInput {
+      width: 100%; max-width: 480px;
+      font-family: inherit;
+      font-size: clamp(1.4rem, 6vw, 2rem);
+      font-weight: 800; color: #5a3a1a; text-align: center;
+      background: #ffffff; border: 4px solid #ff8f5e; border-radius: 999px;
+      padding: .7rem 1.4rem;
+      box-shadow: 0 6px 0 #c9355a88, 0 10px 22px #00000025;
+      outline: none;
+      -webkit-appearance: none;
     }
+    #wordInput::placeholder { color: #d9a88b; }
+    #wordInput:focus { border-color: #34d399; box-shadow: 0 6px 0 #05966988, 0 10px 22px #00000025; }
+    .confetti { position: fixed; top: -20px; z-index: 50; pointer-events: none; border-radius: 3px; animation: fall linear forwards; }
     @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
     .big-num { font-size: clamp(3rem, 14vw, 5rem); font-weight: 900; line-height: 1; }
     .stars { font-size: clamp(2rem, 10vw, 3.4rem); letter-spacing: .3rem; }
+    #fatcat { font-size: clamp(1.4rem, 6vw, 2.4rem); letter-spacing: 2px; line-height: 1.6; }
     @media (max-height: 500px) {
       h1 { font-size: clamp(1.6rem, 6vw, 2.4rem); }
       .icons { font-size: clamp(1.6rem, 7vw, 2.4rem); }
       .baby-row { font-size: clamp(2rem, 9vw, 3rem); }
+      .food .f-emoji { font-size: clamp(2.6rem, 12vw, 4rem); }
     }
   </style>
 </head>
 <body>
 
   <div id="home" class="screen">
-    <div class="icons">🍔🍟🍕🍩🥟🍪</div>
+    <div class="icons">🍔🍕🍩🍎🍟🥟</div>
     <h1>Baby Boy's<br />Restaurant</h1>
-    <p class="tagline">Coming soon… but first, let's play!</p>
-    <div class="baby-row">👶</div>
-    <button id="startBtn" class="game-btn">Tap to Play! 🎉</button>
+    <p class="tagline">Coming soon… but first, feed the hungry caterpillar!</p>
+    <div class="baby-row">🐛🍽️</div>
+    <button id="startBtn" class="game-btn">Let's Type! ⌨️</button>
   </div>
 
   <div id="game" class="screen hidden">
     <div id="hud">
-      <span class="pill">⭐ <span id="score">0</span></span>
-      <span class="pill" id="time">30</span>
+      <span class="pill">🐛 <span id="score">0</span></span>
+      <span class="pill" id="time">60</span>
     </div>
     <div id="timerbar-wrap"><div id="timerbar"></div></div>
     <div id="playfield"></div>
-    <div id="baby">👶<span id="yum">Yum!</span></div>
+    <div id="nom"></div>
+    <div id="cat"><div class="seg"></div><div class="seg"></div><div class="seg"></div><span id="catHead">🐛</span></div>
+    <div id="typebar">
+      <input id="wordInput" type="text" inputmode="text" enterkeyhint="done"
+             placeholder="type the food…"
+             autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+    </div>
   </div>
 
   <div id="end" class="screen hidden">
     <div class="stars" id="stars">⭐</div>
     <div class="big-num" id="finalScore">0</div>
     <p class="tagline" id="endMsg">Yay!</p>
+    <div id="fatcat">🐛</div>
     <div class="baby-row">👶🍼</div>
     <button id="againBtn" class="game-btn">Play Again! 🔁</button>
-    <button id="homeBtn" class="pill" style="border:none;cursor:pointer;font-family:inherit;">🏠 Home</button>
+    <button id="homeBtn" class="pill">🏠 Home</button>
   </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const foods = ['🍔','🍟','🍕','🌮','🍩','🍦','🍰','🧁','🥟','🍪','🍗','🥨','🍉','🥞'];
+    const menu = [
+      ['pizza','🍕'],['apple','🍎'],['grape','🍇'],['mango','🥭'],['donut','🍩'],
+      ['cookie','🍪'],['taco','🌮'],['lemon','🍋'],['cherry','🍒'],['peach','🍑'],
+      ['bread','🍞'],['corn','🌽'],['rice','🍚'],['milk','🥛']
+    ];
     const colors = ['#ff5e7e','#ffd34d','#6ee7b7','#93c5fd','#c4b5fd','#fda4af'];
+    const DURATION = 60;
 
-    let score = 0, timeLeft = 30, timerId = null, spawnTimer = null;
-    let running = false;
+    let score = 0, timeLeft = DURATION, running = false;
+    let timerId = null, targetWord = '', lastIndex = -1;
     const playfield = $('playfield');
+    const input = $('wordInput');
+    const cat = $('cat');
+    const catHead = $('catHead');
 
     let audioCtx = null;
     function audio() {
@@ -184,75 +209,119 @@
       o.connect(g); g.connect(ctx.destination);
       o.start(t); o.stop(t + dur);
     }
-    const pop = () => { tone(520, .12, 'triangle', .2); tone(820, .14, 'triangle', .16, .06); };
+    const keyTap = () => tone(440, .06, 'triangle', .12);
+    const gulp = () => {
+      const ctx = audio();
+      if (!ctx) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      const f = ctx.createBiquadFilter();
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(330, t);
+      o.frequency.exponentialRampToValueAtTime(110, t + 0.6);
+      f.type = 'lowpass';
+      f.frequency.setValueAtTime(950, t);
+      f.frequency.exponentialRampToValueAtTime(320, t + 0.6);
+      lfo.frequency.setValueAtTime(9, t);
+      lfoGain.gain.setValueAtTime(22, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.5, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.75);
+      lfo.connect(lfoGain); lfoGain.connect(o.frequency);
+      o.connect(f); f.connect(g); g.connect(ctx.destination);
+      o.start(t); lfo.start(t);
+      o.stop(t + 0.8); lfo.stop(t + 0.8);
+      tone(190, .08, 'square', .12);
+    };
     const yay = () => { [523,659,784,1046].forEach((f,i)=>tone(f,.18,'sine',.16,i*.08)); };
+
+    function pickFood() {
+      let i;
+      do { i = Math.floor(Math.random() * menu.length); } while (i === lastIndex);
+      lastIndex = i;
+      return menu[i];
+    }
 
     function spawnFood() {
       if (!running) return;
-      if (playfield.querySelector('.food')) return;
-      const f = document.createElement('button');
+      const [word, emoji] = pickFood();
+      targetWord = word;
+      const f = document.createElement('div');
       f.className = 'food';
-      f.type = 'button';
-      f.textContent = foods[Math.floor(Math.random() * foods.length)];
-      const size = Math.random() < 0.5 ? '3rem' : (Math.random() < 0.5 ? '4rem' : '5rem');
-      f.style.fontSize = size;
-      const pw = playfield.clientWidth, ph = playfield.clientHeight;
-      const w = Math.min(pw * 0.7, 180), h = Math.min(ph * 0.55, 220);
-      f.style.left = (10 + Math.random() * Math.max(pw - w - 20, 10)) + 'px';
-      f.style.top = (10 + Math.random() * Math.max(ph - h - 10, 10)) + 'px';
-      f.style.background = 'none'; f.style.border = 'none';
-      f.addEventListener('pointerdown', (e) => { e.preventDefault(); feed(f); });
+      f.innerHTML = '<span class="f-emoji">' + emoji + '</span><span class="f-name">' + word + '</span>';
+      f.style.top = (10 + Math.random() * Math.max(playfield.clientHeight * 0.55, 10)) + 'px';
+      f.style.animationDuration = (Math.random() * 1.6 + 2.8) + 's, ' + (Math.random() * 2 + 3) + 's';
       playfield.appendChild(f);
-      spawnTimer = setTimeout(() => {
-        if (f.isConnected) { f.classList.add('flutter'); setTimeout(() => { f.classList.add('leaving'); setTimeout(()=>f.remove(), 200); }, 500); }
-      }, 2200);
     }
 
-    function feed(f) {
+    function eatFood() {
+      const f = playfield.querySelector('.food');
+      if (f) { f.classList.add('eaten'); setTimeout(() => f.remove(), 380); }
       score++;
       $('score').textContent = score;
-      pop();
-      f.classList.add('leaving');
-      const done = () => { f.remove(); spawnFood(); };
-      setTimeout(done, 150);
-      const yumEl = $('yum');
-      yumEl.textContent = ['Yum!','Nom nom!','So good!','Delicious!','Mmm!','More!','Yummy!'][Math.floor(Math.random()*7)];
-      yumEl.classList.remove('show'); void yumEl.offsetWidth; yumEl.classList.add('show');
+      grow(2);
+      gulp();
+      const nomEl = $('nom');
+      nomEl.textContent = ['Nom nom!','Yum yum!','So yummy!','Munch munch!','Tasty!','Crunch!','Mmm!'][Math.floor(Math.random()*7)];
+      nomEl.classList.remove('show'); void nomEl.offsetWidth; nomEl.classList.add('show');
+      input.value = '';
+      input.focus();
+      setTimeout(spawnFood, 300);
+    }
+
+    function grow(n) {
+      for (let i = 0; i < n; i++) {
+        const s = document.createElement('div');
+        s.className = 'seg';
+        cat.insertBefore(s, catHead);
+      }
+      cat.classList.remove('gulp'); void cat.offsetWidth; cat.classList.add('gulp');
+      const size = Math.min(26, 26 - Math.floor(score / 15));
+      cat.querySelectorAll('.seg').forEach(s => { s.style.width = size + 'px'; s.style.height = size + 'px'; });
     }
 
     function startGame() {
-      score = 0; timeLeft = 30; running = true;
+      score = 0; timeLeft = DURATION; running = true;
       $('score').textContent = '0';
-      $('time').textContent = timeLeft;
+      $('time').textContent = DURATION;
       $('timerbar').style.width = '100%';
       playfield.innerHTML = '';
+      cat.querySelectorAll('.seg').forEach(s => s.remove());
+      for (let i = 0; i < 3; i++) grow(1);
+      input.value = '';
       $('home').classList.add('hidden');
       $('end').classList.add('hidden');
       $('game').classList.remove('hidden');
-      clearInterval(timerId); clearTimeout(spawnTimer);
+      input.focus();
+      clearInterval(timerId);
       spawnFood();
       timerId = setInterval(() => {
         timeLeft--;
         $('time').textContent = timeLeft;
-        $('timerbar').style.width = (timeLeft / 30 * 100) + '%';
+        $('timerbar').style.width = (timeLeft / DURATION * 100) + '%';
         if (timeLeft <= 0) endGame();
       }, 1000);
     }
 
     function endGame() {
       running = false;
-      clearInterval(timerId); clearTimeout(spawnTimer);
+      clearInterval(timerId);
       playfield.innerHTML = '';
+      input.blur();
       yay();
       $('finalScore').textContent = score;
-      let msg = 'Oops, baby is still hungry!';
+      let msg = 'Baby caterpillar is still hungry!';
       let stars = '⭐';
-      if (score >= 25) { msg = 'WOW! Baby boy is so full! Best chef ever!'; stars = '⭐⭐⭐⭐⭐'; }
-      else if (score >= 15) { msg = 'Great job! Baby boy is happy!'; stars = '⭐⭐⭐⭐'; }
-      else if (score >= 8) { msg = 'Yay! Baby boy got a yummy snack!'; stars = '⭐⭐⭐'; }
-      else if (score >= 3) { msg = 'Good try, baby got a little taste!'; stars = '⭐⭐'; }
+      if (score >= 25) { msg = 'WOW! What a chubby happy caterpillar!'; stars = '⭐⭐⭐⭐⭐'; }
+      else if (score >= 15) { msg = 'Great job! The caterpillar is so full!'; stars = '⭐⭐⭐⭐'; }
+      else if (score >= 8) { msg = 'Yay! The caterpillar got a yummy snack!'; stars = '⭐⭐⭐'; }
+      else if (score >= 3) { msg = 'Good try, baby caterpillar had a taste!'; stars = '⭐⭐'; }
       $('endMsg').textContent = msg;
       $('stars').textContent = stars;
+      $('fatcat').textContent = '🐛' + '🟢'.repeat(Math.min(score * 2, 46));
       $('game').classList.add('hidden');
       $('end').classList.remove('hidden');
       confetti();
@@ -272,10 +341,25 @@
       }
     }
 
+    input.addEventListener('input', () => {
+      if (!running) return;
+      const v = input.value.toLowerCase().replace(/\s+/g, '');
+      const label = playfield.querySelector('.food .f-name');
+      if (!label) return;
+      if (v === targetWord) { eatFood(); return; }
+      label.className = 'f-name' + (v.length === 0 ? '' : (targetWord.startsWith(v) ? ' good' : ' off'));
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (!running) return;
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); return; }
+      if (!e.ctrlKey && !e.metaKey && e.key.length === 1) keyTap();
+    });
+
     $('startBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); audio(); startGame(); });
     $('againBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); audio(); startGame(); });
     $('homeBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); audio();
-      clearInterval(timerId); clearTimeout(spawnTimer); running = false;
+      clearInterval(timerId); running = false;
       $('end').classList.add('hidden');
       $('home').classList.remove('hidden');
     });
