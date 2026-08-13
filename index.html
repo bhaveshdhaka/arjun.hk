@@ -2,15 +2,283 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Arjun's Site</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#ffe29a" />
+  <title>Baby Boy's Restaurant</title>
   <style>
-    body { font-family: system-ui, sans-serif; background: #0a0a0c; color: #4ade80;
-           display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-    h1 { font-size: 2.5rem; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: linear-gradient(160deg, #ffe29a 0%, #ffb3c1 55%, #b2e0ff 100%);
+      color: #5a3a1a;
+      display: flex; align-items: center; justify-content: center;
+      height: 100vh; height: 100dvh; margin: 0;
+      text-align: center;
+      overflow: hidden;
+      overscroll-behavior: none;
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .screen {
+      width: 100%; height: 100%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1.2rem;
+      padding: calc(1rem + env(safe-area-inset-top)) 1rem calc(1.5rem + env(safe-area-inset-bottom));
+      position: relative;
+    }
+    .hidden { display: none !important; }
+    h1 {
+      font-size: clamp(2.2rem, 9vw, 4rem);
+      font-weight: 900;
+      text-shadow: 0 3px 0 #fff8, 0 0 24px #ffffffaa;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+    }
+    .tagline { font-size: clamp(1rem, 3.6vw, 1.4rem); font-weight: 700; color: #7c4a2a; opacity: .9; }
+    .icons {
+      font-size: clamp(2.6rem, 10vw, 4rem);
+      letter-spacing: 0.6rem;
+      animation: bob 2.4s ease-in-out infinite;
+    }
+    .baby-row { font-size: clamp(3rem, 12vw, 5rem); animation: bob 1.8s ease-in-out infinite; }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+    button.game-btn {
+      font-family: inherit;
+      font-size: clamp(1.5rem, 6vw, 2.2rem);
+      font-weight: 900;
+      color: #fff;
+      background: linear-gradient(180deg, #ff8f5e, #ff5e7e);
+      border: none; border-radius: 999px;
+      padding: 1rem 2.6rem;
+      box-shadow: 0 6px 0 #c9355a, 0 12px 24px #ff5e7e55;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform .12s ease;
+    }
+    button.game-btn:active { transform: translateY(5px) scale(.98); box-shadow: 0 2px 0 #c9355a; }
+    .pill {
+      font-weight: 800; font-size: clamp(1rem, 4vw, 1.3rem);
+      background: #ffffffcc; border-radius: 999px; padding: .5rem 1.2rem;
+      box-shadow: 0 4px 12px #00000018;
+    }
+    #game {
+      justify-content: flex-start;
+      padding-top: calc(1.2rem + env(safe-area-inset-top));
+    }
+    #hud {
+      width: 100%; max-width: 760px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem;
+    }
+    #timerbar-wrap {
+      width: 100%; max-width: 760px;
+      height: 14px; border-radius: 999px;
+      background: #ffffffaa; overflow: hidden;
+      box-shadow: inset 0 2px 4px #00000022;
+    }
+    #timerbar { height: 100%; width: 100%; border-radius: 999px; background: linear-gradient(90deg,#ffd34d,#ff5e7e); transition: width .2s linear; }
+    #playfield {
+      position: relative; flex: 1; width: 100%; max-width: 760px;
+    }
+    .food {
+      position: absolute; cursor: pointer;
+      touch-action: manipulation;
+      animation: pop-in .22s cubic-bezier(.34,1.56,.64,1);
+      filter: drop-shadow(0 8px 12px #00000030);
+    }
+    .food.leaving { animation: pop-out .18s ease forwards; }
+    .food.flutter { animation: wiggle .5s ease; }
+    @keyframes pop-in { 0% { transform: scale(0) rotate(-30deg); } 100% { transform: scale(1) rotate(0); } }
+    @keyframes pop-out { 0% { transform: scale(1); } 100% { transform: scale(0) translateY(40px); opacity: 0; } }
+    @keyframes wiggle { 0%,100% { transform: rotate(-12deg) scale(1); } 50% { transform: rotate(12deg) scale(1.12); } }
+    #baby {
+      font-size: clamp(3.4rem, 14vw, 5.5rem);
+      line-height: 1;
+      position: relative;
+      animation: bob 1.8s ease-in-out infinite;
+    }
+    #yum {
+      position: absolute; top: -1.4rem; left: 50%; transform: translateX(-50%);
+      font-weight: 900; font-size: clamp(1.2rem, 5vw, 1.8rem);
+      color: #ff5e7e; text-shadow: 0 2px 0 #fff;
+      opacity: 0;
+    }
+    #yum.show { animation: yum-up .8s ease forwards; }
+    @keyframes yum-up { 0% { opacity: 0; transform: translate(-50%, 12px) scale(.6); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -46px) scale(1.2); } }
+    .confetti {
+      position: fixed; top: -20px; z-index: 50;
+      pointer-events: none;
+      border-radius: 3px;
+      animation: fall linear forwards;
+    }
+    @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+    .big-num { font-size: clamp(3rem, 14vw, 5rem); font-weight: 900; line-height: 1; }
+    .stars { font-size: clamp(2rem, 10vw, 3.4rem); letter-spacing: .3rem; }
+    @media (max-height: 500px) {
+      h1 { font-size: clamp(1.6rem, 6vw, 2.4rem); }
+      .icons { font-size: clamp(1.6rem, 7vw, 2.4rem); }
+      .baby-row { font-size: clamp(2rem, 9vw, 3rem); }
+    }
   </style>
 </head>
 <body>
-  <h1>Hello World! 👋🦖</h1>
+
+  <div id="home" class="screen">
+    <div class="icons">🍔🍟🍕🍩🥟🍪</div>
+    <h1>Baby Boy's<br />Restaurant</h1>
+    <p class="tagline">Coming soon… but first, let's play!</p>
+    <div class="baby-row">👶</div>
+    <button id="startBtn" class="game-btn">Tap to Play! 🎉</button>
+  </div>
+
+  <div id="game" class="screen hidden">
+    <div id="hud">
+      <span class="pill">⭐ <span id="score">0</span></span>
+      <span class="pill" id="time">30</span>
+    </div>
+    <div id="timerbar-wrap"><div id="timerbar"></div></div>
+    <div id="playfield"></div>
+    <div id="baby">👶<span id="yum">Yum!</span></div>
+  </div>
+
+  <div id="end" class="screen hidden">
+    <div class="stars" id="stars">⭐</div>
+    <div class="big-num" id="finalScore">0</div>
+    <p class="tagline" id="endMsg">Yay!</p>
+    <div class="baby-row">👶🍼</div>
+    <button id="againBtn" class="game-btn">Play Again! 🔁</button>
+    <button id="homeBtn" class="pill" style="border:none;cursor:pointer;font-family:inherit;">🏠 Home</button>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const foods = ['🍔','🍟','🍕','🌮','🍩','🍦','🍰','🧁','🥟','🍪','🍗','🥨','🍉','🥞'];
+    const colors = ['#ff5e7e','#ffd34d','#6ee7b7','#93c5fd','#c4b5fd','#fda4af'];
+
+    let score = 0, timeLeft = 30, timerId = null, spawnTimer = null;
+    let running = false;
+    const playfield = $('playfield');
+
+    let audioCtx = null;
+    function audio() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        audioCtx = new AC();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+    function tone(freq, dur, type = 'sine', vol = 0.18, when = 0) {
+      const ctx = audio();
+      if (!ctx) return;
+      const t = ctx.currentTime + when;
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t); o.stop(t + dur);
+    }
+    const pop = () => { tone(520, .12, 'triangle', .2); tone(820, .14, 'triangle', .16, .06); };
+    const yay = () => { [523,659,784,1046].forEach((f,i)=>tone(f,.18,'sine',.16,i*.08)); };
+
+    function spawnFood() {
+      if (!running) return;
+      if (playfield.querySelector('.food')) return;
+      const f = document.createElement('button');
+      f.className = 'food';
+      f.type = 'button';
+      f.textContent = foods[Math.floor(Math.random() * foods.length)];
+      const size = Math.random() < 0.5 ? '3rem' : (Math.random() < 0.5 ? '4rem' : '5rem');
+      f.style.fontSize = size;
+      const pw = playfield.clientWidth, ph = playfield.clientHeight;
+      const w = Math.min(pw * 0.7, 180), h = Math.min(ph * 0.55, 220);
+      f.style.left = (10 + Math.random() * Math.max(pw - w - 20, 10)) + 'px';
+      f.style.top = (10 + Math.random() * Math.max(ph - h - 10, 10)) + 'px';
+      f.style.background = 'none'; f.style.border = 'none';
+      f.addEventListener('pointerdown', (e) => { e.preventDefault(); feed(f); });
+      playfield.appendChild(f);
+      spawnTimer = setTimeout(() => {
+        if (f.isConnected) { f.classList.add('flutter'); setTimeout(() => { f.classList.add('leaving'); setTimeout(()=>f.remove(), 200); }, 500); }
+      }, 2200);
+    }
+
+    function feed(f) {
+      score++;
+      $('score').textContent = score;
+      pop();
+      f.classList.add('leaving');
+      const done = () => { f.remove(); spawnFood(); };
+      setTimeout(done, 150);
+      const yumEl = $('yum');
+      yumEl.textContent = ['Yum!','Nom nom!','So good!','Delicious!','Mmm!','More!','Yummy!'][Math.floor(Math.random()*7)];
+      yumEl.classList.remove('show'); void yumEl.offsetWidth; yumEl.classList.add('show');
+    }
+
+    function startGame() {
+      score = 0; timeLeft = 30; running = true;
+      $('score').textContent = '0';
+      $('time').textContent = timeLeft;
+      $('timerbar').style.width = '100%';
+      playfield.innerHTML = '';
+      $('home').classList.add('hidden');
+      $('end').classList.add('hidden');
+      $('game').classList.remove('hidden');
+      clearInterval(timerId); clearTimeout(spawnTimer);
+      spawnFood();
+      timerId = setInterval(() => {
+        timeLeft--;
+        $('time').textContent = timeLeft;
+        $('timerbar').style.width = (timeLeft / 30 * 100) + '%';
+        if (timeLeft <= 0) endGame();
+      }, 1000);
+    }
+
+    function endGame() {
+      running = false;
+      clearInterval(timerId); clearTimeout(spawnTimer);
+      playfield.innerHTML = '';
+      yay();
+      $('finalScore').textContent = score;
+      let msg = 'Oops, baby is still hungry!';
+      let stars = '⭐';
+      if (score >= 25) { msg = 'WOW! Baby boy is so full! Best chef ever!'; stars = '⭐⭐⭐⭐⭐'; }
+      else if (score >= 15) { msg = 'Great job! Baby boy is happy!'; stars = '⭐⭐⭐⭐'; }
+      else if (score >= 8) { msg = 'Yay! Baby boy got a yummy snack!'; stars = '⭐⭐⭐'; }
+      else if (score >= 3) { msg = 'Good try, baby got a little taste!'; stars = '⭐⭐'; }
+      $('endMsg').textContent = msg;
+      $('stars').textContent = stars;
+      $('game').classList.add('hidden');
+      $('end').classList.remove('hidden');
+      confetti();
+    }
+
+    function confetti() {
+      for (let i = 0; i < 60; i++) {
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw';
+        c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
+        c.style.background = colors[Math.floor(Math.random() * colors.length)];
+        c.style.animationDuration = (1.4 + Math.random() * 1.6) + 's';
+        c.style.animationDelay = (Math.random() * .8) + 's';
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 3800);
+      }
+    }
+
+    $('startBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); audio(); startGame(); });
+    $('againBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); audio(); startGame(); });
+    $('homeBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); audio();
+      clearInterval(timerId); clearTimeout(spawnTimer); running = false;
+      $('end').classList.add('hidden');
+      $('home').classList.remove('hidden');
+    });
+  </script>
 </body>
 </html>
