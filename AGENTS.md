@@ -1,43 +1,24 @@
-# AGENTS.md — arjun.hk
+# arjun.hk
 
-Guidance for AI agents working in this repository. Read this first. This is
-the single source of truth for how this project is built, run, and shipped.
+Static single-page site (one `index.html` + assets, served by `nginx:alpine`).
+Single branch `main`. Coolify app `arjun.hk` (`pexxwuld0pa8q9bnwhnriqbl`) pulls
+`ghcr.io/bhaveshdhaka/arjun.hk:main` → https://arjun.hk / www.arjun.hk (public).
 
-## What this is
+## Before you push
 
-`arjun.hk` is a tiny **static single-page site** (one `index.html` served by
-nginx). It is a placeholder landing page for Arjun (a welcome/hello page).
+Run the check locally — it's the same command CI runs:
 
-- Stack: `nginx:alpine`, a single `index.html`, minimal inline CSS. Very little
-  surface — keep it that way.
-- Live: `https://arjun.hk` (production; no preprod/test instance).
+```bash
+bash check.sh
+```
 
-## Ship & Deploy (push → GitHub → GHCR → Coolify)
+It verifies `index.html` is present + well-formed and that every referenced
+local asset exists. Fix anything that fails before pushing.
 
-Develop in **oc-dev**, commit, and **push to GitHub** — no PR gate, direct
-pushes allowed. This repo has **one branch (`main`)** only. Pushing triggers
-deployment end-to-end:
+## Ship
 
-1. **Push** to `main` on `github.com/bhaveshdhaka/arjun.hk`.
-2. GitHub Actions `docker-publish.yml` builds the image and pushes it to **GHCR**
-   (`ghcr.io/bhaveshdhaka/arjun.hk`, tagged `:main` + git sha).
-3. The same workflow POSTs to the **Coolify API** to pull `:main` and redeploy
-   **arjun.hk** (`pexxwuld0pa8q9bnwhnriqbl`) → `https://arjun.hk`.
-4. Coolify pulls the image and serves the live URL behind Cloudflare.
+`git push origin main` → CI gate (check.sh) → image build → Coolify deploy →
+live. Verify with `curl -N https://dash.bhavesh.hk/events` (wait for
+`status=finished`), then confirm HTTP 200 at https://arjun.hk.
 
-**Verify live**: open `https://arjun.hk` (or `curl` it) and confirm your change
-is present. If Coolify didn't redeploy, check the deploy log in the Coolify
-dashboard or hit the trigger endpoint.
-**Standard protocol:** read **`docs/SHIP.md`** — the exact push commands, the Coolify webhook to watch, and the identical chat reply (with lead-time timing) every agent gives.
-
-
-**Key facts:**
-- Coolify API: `https://coolify.bhavesh.hk/api/v1`. Token:
-  `/srv/secrets/coolify-api`; also stored as GitHub Actions `COOLIFY_TOKEN`.
-- Deploy trigger endpoint: `POST /api/v1/applications/<uuid>/start`.
-- Single app: **arjun.hk** `pexxwuld0pa8q9bnwhnriqbl` (pulls `:main`).
-## oc-infra vs oc-dev (read on this box)
-
-- The agent that manages the server (Coolify, Cloudflare, containers, /srv, secrets) is **oc-infra**: oc-infra.bhavesh.hk, host-level, no single git project. Its global guide is `/srv/AGENTS.md`.
-- The agent that works on THIS repo (code, CI, PRs, ship) is **oc-dev**: oc-dev.bhavesh.hk, restricted perms.
-- Full authoritative doc: `/srv/AGENTS.md`. Keep it and this file in sync.
+CI is the gate; there is no manual review and no way to bypass it.
