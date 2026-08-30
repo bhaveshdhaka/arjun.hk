@@ -1,166 +1,49 @@
 MANISH SINGH / SOUTHPAW AESTHETIC
-PUBLIC PROFESSIONAL RESEARCH DOSSIER
-Research completed: 30 August 2026
-Scope: public, professionally relevant web material only.
+RESEARCH DOSSIER v2 — BUILD-READY EDITION
+Completed: 30 August 2026
 
-SUMMARY
+THIS FILE IS NOW AN INDEX. The full research lives in research/ (10 documents)
+and media/manifest.json (machine-readable census). A working homepage draft
+implementing the blueprint ships in site-draft/.
 
-Manish Singh is publicly presented as the coach behind Southpaw Aesthetic. His current Instagram profile, @southpawaesthetic, identifies him as "MANISH SINGH" and describes him as a strength and rehabilitation coach, martial artist, and coach with 10+ years in the field. The strongest independent credential evidence is ATG For Coaches' official public directory, which lists Manish Singh as an ATG Level 3 Certified Coach based in Mohali, Punjab, India.
+WHAT CHANGED SINCE v1
+- The dossier is no longer text-only caution. It is a complete, source-linked
+  foundation for building and launching the website.
+- Full Instagram census pipeline (was: 1 indexed post). Feed API harvest
+  running against all 231 posts; every harvested post carries full captions,
+  engagement, tags, and media URLs. See research/02 + media/manifest.json.
+- MAJOR FIND: ATG Podcast episode with Ben Patrick — "From Athlete to
+  Life-Changer: Manish's Journey to ATG Level 3 Coach" (15 Jan 2025, 26:34).
+  Podcast copy: "one of the first Level 3 ATG coaches in the Eastern
+  Hemisphere"; mission "help 10,000 people live pain-free".
+- MAJOR FIND: AJP India 2025 GOLD (21 Jun 2025) + his stated "#1 ranking in
+  India" — championship credibility v1 entirely missed.
+- Brand system extracted from his own visuals: ink/gold combat palette,
+  documentary 9:16 style, warrior-healer duality. research/05.
+- Voice & copy bank: 40+ quotable lines in his own words, sorted by website
+  section. research/04.
+- Testimonial surfaces exhausted with a documented-null verdict + a consent
+  protocol + an in-his-words client transformation story. research/07.
+- Identity disambiguation: 4 same-name accounts ruled out with evidence. research/01.
 
-The evidence supports a coaching profile centred on strength and pain-free movement, with online and in-person coaching. It does not establish medical, physiotherapy, diagnostic, or injury-treatment licensure. No independently attributable client reviews, podcast appearances, long-form interviews, YouTube channel, or press coverage were located in this public-source research pass.
+THE 10 DOCUMENTS
+01 profile-and-identity ...... who he is, location signals, ecosystem, disambiguation
+02 content-census ............ harvest method + status + shortcode register
+03 content-pillars ........... five pillars with engagement evidence
+04 voice-and-copy-bank ....... his language, section by section
+05 brand-visual-system ....... palette hexes, typography, photography rules
+06 credentials-and-authority . ATG L3 + podcast + AJP gold + mentor chain
+07 testimonials-and-proof .... what exists, what was searched, consent protocol
+08 market-and-audience ....... Tricity market, positioning, SEO seeds
+09 site-blueprint ............ full build spec (sitemap, sections, copy, tech)
+10 ask-list .................. the only 9 things Manish must supply
 
-IDENTITY AND PROFESSIONAL POSITIONING
+STANDARD OF PROOF
+Every claim links its source. First-party marketing claims are labelled as
+such; credentials link official directories; his stated goals are quoted as
+goals, never results. No medical claims anywhere.
 
-1. CURRENT SOUTHPAW AESTHETIC PROFILE
-   Source: https://www.instagram.com/southpawaesthetic/
-   Identity confidence: High. The public profile is headed "MANISH SINGH" and uses the Southpaw Aesthetic handle.
-
-   Public bio quotations:
-   - "Strength & Rehab Coach | 10+ Years in the game"
-   - "Martial Artist"
-   - "I Help People Conquer Pain, Not Just Manage It"
-   - "DM for Coaching Inquiries"
-
-   Evidence-supported profile language:
-   - Manish publicly positions himself as a strength and rehabilitation coach.
-   - He publicly identifies as a martial artist.
-   - He presents a pain-focused coaching philosophy.
-   - His profile invites coaching enquiries by direct message.
-
-   Claims requiring qualification:
-   - "10+ Years in the game" is a first-party experience claim; it has not been independently verified.
-   - The pain-focused wording is a coaching philosophy, not evidence of healthcare licensure or guaranteed clinical outcomes.
-
-2. ATG LEVEL 3 CREDENTIAL
-   Primary source: https://map.atgforcoaches.com/coach/manish-singh
-   Corroborating regional directory: https://map.atgforcoaches.com/coaches/india/mohali
-   Credential confidence: High. Both sources are official ATG For Coaches directory pages.
-
-   The official directory identifies Manish Singh as an "ATG Level 3 Certified Coach" based in Mohali, Punjab, India. It describes his specialism as "Strength, pain free movement" and indicates that he is accepting clients.
-
-   Publicly listed coaching formats:
-   - Online coaching
-   - Online personal training
-   - 1:1 personal training
-
-   Publicly listed client groups:
-   - General population
-   - Corporate clients
-   - Athletes
-   - Seniors
-   - Women
-
-   Publicly listed sports:
-   - Soccer
-   - Martial arts
-   - Cricket
-
-   Safe credential wording for a future website:
-   "Manish Singh is an ATG Level 3 Certified Coach, listed in ATG's official coach directory."
-   Link that statement directly to the primary ATG directory source.
-
-   Do not claim, without separate evidence, that ATG Level 3 is a university degree, independent accreditation, medical credential, physiotherapy qualification, injury-treatment licence, or employment/endorsement by ATG.
-
-3. LOCATION AND AVAILABILITY
-   The official ATG directory lists Mohali, Punjab, India. It lists both online and in-person services. A precise facility address, a service-area radius, pricing, and a booking URL were not established by the reviewed public sources and should be confirmed with Manish before publication.
-
-COACHING PHILOSOPHY
-
-Manish's own concise public positioning is: "I Help People Conquer Pain, Not Just Manage It." This can be expressed as a commitment to building capacity and restoring confidence in movement, but it should not be framed as a cure or medical guarantee.
-
-ATG's published training framework supplies useful context for presenting the coaching approach. Sources:
-- https://www.atgforcoaches.com/
-- https://www.atgonlinecoaching.com/articles/the-10-atg-principles
-- https://www.atgonlinecoaching.com/articles/article-knee-ability-zero-basics-and-pro
-
-ATG's published principles include:
-1. Build From the Ground Up
-2. Build From Side-to-Side
-3. Build From Front-to-Back
-4. Build Both Short-Range and Long-Range
-5. Build From Light-to-Heavy
-6. Build From Long-to-Short (Duration)
-7. Build From Slow-to-Fast
-8. Build and Keep a Bulletproofing Reserve
-9. Truth in Numbers
-10. Pain-Free Sets the Gains Free
-
-ATG describes these as measurable, scalable movement progressions. Its published Knee Ability framework includes scaled progressions and lower-body movements such as sled/resisted-treadmill work, step-ups, ATG Split Squats, deep squats, tibialis raises, calf work, hamstring/Nordic work, mobility, hips, and core. These describe ATG's framework; they are not proof that every movement or programme is appropriate for every person.
-
-Website-ready, appropriately scoped philosophy copy:
-"Manish's coaching combines strength training with progressive, baseline-aware movement work. Drawing on the ATG progression framework, sessions can be scaled for a client's current capacity, using measurable progress in range, control, load, and speed."
-
-Avoid outcome guarantees including "cures pain", "prevents injury", "rehabilitates injuries", or "guaranteed performance gains" unless appropriately supported and legally reviewed.
-
-PUBLIC MEDIA AND CONTENT
-
-1. INSTAGRAM PROFILE AND FEED
-   Source: https://www.instagram.com/southpawaesthetic/
-   Publicly visible material includes photos and videos/reels. Use Instagram's official embedding workflow or obtain written permission from Manish before downloading, hosting, editing, or republishing content.
-
-2. INDEXED EXERCISE POST
-   Source: https://www.instagram.com/p/C9epfs8SqaL/
-   Indexed date: 16 July 2024
-   Public preview quotation: "Bulgarian split squats to build single-leg strength and expose imbalances."
-   This is a useful candidate for a future exercise-library or coaching-content section. The full caption, media licence, and suitability for reuse should be confirmed directly with Manish.
-
-3. PODCASTS, INTERVIEWS, PRESS, YOUTUBE
-   No reliably attributable public podcast episode, long-form interview, press article, or YouTube channel/video was found during this research pass. Search results containing unrelated people named Manish Singh or unrelated uses of "Southpaw" were excluded.
-
-TESTIMONIALS AND REVIEWS
-
-No independent, attributable public client testimonials or review-platform entries were located. Therefore the current research cannot provide verified review quotes, rating totals, or case-study outcomes.
-
-Before the website is designed, request from Manish:
-- Written client permission for each testimonial.
-- Client first name/initial, relevant context, date, and whether the result may be published.
-- A clear distinction between direct client quotes and coach-written case-study summaries.
-- Supporting before/after metrics only with documented consent and no health-outcome guarantees.
-
-MEDIA ASSET HANDLING
-
-No third-party photo, video, audio, certificate image, or badge has been copied into this repository. Public availability does not grant republication rights. The adjacent media inventory records source URLs and safe use options.
-
-For the production website, obtain from Manish:
-- Brand logo and brand guidelines.
-- Approved coaching portrait(s).
-- Original training clips and agreed social cuts.
-- ATG credential certificate/badge permission and current proof.
-- Client testimonial permissions.
-- Preferred contact and booking links.
-
-SOURCE REGISTER
-
-A. Manish Singh / Southpaw Aesthetic Instagram
-   https://www.instagram.com/southpawaesthetic/
-   Role: current first-party professional profile; bio, philosophy, feed.
-
-B. Manish Singh ATG coach profile
-   https://map.atgforcoaches.com/coach/manish-singh
-   Role: official certification, location, services, client groups, sports.
-
-C. ATG coaches in Mohali directory
-   https://map.atgforcoaches.com/coaches/india/mohali
-   Role: corroborating official regional credential listing.
-
-D. ATG For Coaches
-   https://www.atgforcoaches.com/
-   Role: certification-program context.
-
-E. The 10 ATG Principles
-   https://www.atgonlinecoaching.com/articles/the-10-atg-principles
-   Role: official ATG philosophy and progression context.
-
-F. Knee Ability Zero, Basics & Pro
-   https://www.atgonlinecoaching.com/articles/article-knee-ability-zero-basics-and-pro
-   Role: official ATG Knee Ability terminology and progression context.
-
-G. Bulgarian split squat Instagram post
-   https://www.instagram.com/p/C9epfs8SqaL/
-   Role: indexed first-party exercise-content candidate.
-
-LIMITATIONS AND NEXT RESEARCH ACTIONS
-
-This is a public-web research snapshot, not a biography authorised by Manish or a clinical credential audit. It intentionally excludes sensitive personal information. It contains no independently verified media appearances or review/testimonial quotations because none were found with adequate identity and provenance.
-
-The fastest way to make the site materially stronger is a short source-collection interview with Manish. Ask for: approved bio, coaching history, exact service packages, pricing/booking flow, approved clips/photos, testimonial releases, awards/certificates, all social handles, and any podcasts or collaborations not indexed publicly.
+RIGHTS
+No third-party media is copied into this repository (owner decision). The
+manifest records permanent permalinks + expiring source URLs. Production uses
+official embeds or originals supplied by Manish (research/10).

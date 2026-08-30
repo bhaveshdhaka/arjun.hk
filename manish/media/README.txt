@@ -1,56 +1,73 @@
-SOUTHPAW AESTHETIC / MANISH SINGH — PUBLIC MEDIA INVENTORY
-Research completed: 30 August 2026
+SOUTHPAW AESTHETIC / MANISH SINGH — MEDIA INVENTORY (v2)
+Research: 30 August 2026 · Owner decision: INVENTORY ONLY — no third-party media
+files are copied into this repository. This folder holds documentation + the
+machine-readable manifest.
 
-This folder intentionally contains no copied third-party images, videos, audio, certificates, or social-media downloads. Public accessibility is not a licence to reproduce material. This inventory preserves the verified source links, rights guidance, and suggested website use.
+WHAT LIVES HERE
 
-VERIFIED SOURCE ITEMS
+- manifest.json ......... full machine-readable inventory: every harvested post
+                          (permalink, caption, engagement, media URLs, tags),
+                          profile snapshot, podcast metadata, credential links.
+                          Rebuild with ../research/build-manifest.sh
+- README.txt ............ this file (rights guidance + source register)
 
-1. CURRENT SOUTHPAW AESTHETIC INSTAGRAM PROFILE
-   URL: https://www.instagram.com/southpawaesthetic/
-   Type: first-party public profile with posts, photos, and videos/reels.
-   Website use: link to profile; embed individual posts only through Instagram's supported embedding method and only after Manish confirms the selection.
-   Do not: scrape, download, re-host, crop, or edit profile media without the creator's explicit permission.
+REPRODUCTION RIGHTS
 
-2. BULGARIAN SPLIT SQUAT POST
-   URL: https://www.instagram.com/p/C9epfs8SqaL/
-   Indexed date: 16 July 2024
-   Type: Instagram photo/carousel post.
-   Indexed preview: "Bulgarian split squats to build single-leg strength and expose imbalances."
-   Website use: candidate for an approved exercise-content tile or official Instagram embed.
-   Rights: request the original asset and written republishing approval from Manish.
+Nothing in the manifest grants reproduction rights. Instagram CDN URLs are
+signed and expire within days; permalinks are permanent. For production use:
+(a) official Instagram embeds, or (b) originals supplied by Manish with written
+permission. Store any supplied originals HERE with source/date/permission fields.
 
-3. MANISH SINGH — ATG LEVEL 3 DIRECTORY PROFILE
-   URL: https://map.atgforcoaches.com/coach/manish-singh
-   Type: official credential/service profile; may include a profile image and L3 badge.
-   Website use: credential verification link. Use any image/badge only with express permission from Manish and ATG where required.
+TOP MEDIA ASSETS (by website value)
 
-4. ATG COACHES IN MOHALI DIRECTORY
-   URL: https://map.atgforcoaches.com/coaches/india/mohali
-   Type: official regional directory.
-   Website use: corroborating credential/location link; no media reuse proposed.
+1. AJP GOLD ANNOUNCEMENT REEL
+   https://www.instagram.com/p/DLOz2a3RJ5l/
+   "THE FIGHT — AJP INDIA 2025 Champion… #1 ranking in India" · 9:16 reel
+   Site use: authority strip / hero candidate.
 
-5. ATG FOR COACHES
-   URL: https://www.atgforcoaches.com/
-   Type: official certification-program page; may contain certificate visuals.
-   Website use: certification-program context link only unless brand usage permission is obtained.
+2. GOLD CELEBRATION CAROUSEL
+   https://www.instagram.com/p/DLVKCYiSf8R/
+   Team celebration, cakes, medals · 193 likes
+   Site use: community/results block.
 
-MEDIA NOT FOUND IN THIS RESEARCH PASS
+3. WAR ROUNDS CAROUSEL
+   https://www.instagram.com/p/DLu4wijSn1Z/
+   "BOXING IS MY FIRST LOVE" photo essay · 155 likes
+   Site use: hero/about imagery.
 
-- Attributable podcast episode
-- Attributable long-form interview
-- Attributable YouTube channel/video
-- Independent press/media feature
-- Independent client-review profile or public testimonial record
+4. CLIENT TRANSFORMATION REEL
+   https://www.instagram.com/p/DbPyhWquc6z/
+   Zero → 30 kg weighted pull-ups story
+   Site use: proof section, quoted verbatim.
 
-PRODUCTION ASSET REQUEST LIST
+5. ATG L3 GRATITUDE POST
+   https://www.instagram.com/p/DHLbEtzyRAf/
+   Full mentor-chain thanks (Ben Patrick, Keegan Smith et al.)
+   Site use: about/authority corroboration.
 
-Obtain directly from Manish before building a marketing site:
-- Approved headshot and training portraits, including usage scope.
-- Original high-resolution workout clips and captions/transcripts.
-- Logo, colour/type guidelines, and any brand assets.
-- Approved selection of Instagram post URLs for embeds.
-- Testimonial text, client attribution preferences, dates, and signed consent.
-- Proof/permission for ATG certificate or badge usage.
-- Any podcast, interview, collaboration, or press URLs that are not public-indexed.
+6. ATG SPLIT SQUATS + NATURE REEL
+   https://www.instagram.com/p/DMMWarcSuHk/
+   Himalayan outdoor ATG work
+   Site use: method/nature block.
 
-When assets are supplied, store original files in this folder with clear filenames, a source/author field, date received, and written usage permission record.
+7. PODCAST EPISODE (AUDIO MASTER AVAILABLE)
+   "From Athlete to Life-Changer: Manish's Journey to ATG Level 3 Coach"
+   The ATG Podcast · Ben Patrick · 15 Jan 2025 · 26:34
+   MP3: https://anchor.fm/s/db42bdec/podcast/play/97097024/
+        https%3A%2F%2Fd3ctxlq1ktw2nl.cloudfront.net%2Fstaging%2F2025-0-15%2F393131424-44100-2-c9ee97adf25fb.mp3
+   Site use: Spotify embed on About.
+
+8. PROFILE PORTRAIT
+   Recorded in manifest.json → .profile.profile_pic_url (signed URL, expires).
+   Lifestyle portrait: black polo, café, contemplative. Site use: tight crop.
+
+9. GPP PROCESS REEL
+   https://www.instagram.com/p/Dba3vhhO3eN/
+   "Week 4, Phase 1 GPP" — his coaching-process storytelling
+   Site use: method section.
+
+NOT PUBLICLY RETRIEVABLE (ask Manish — see ../research/10-ask-list.md)
+
+- Original camera files / high-res masters of any of the above
+- Reel MP4 masters, stories, highlight-tray contents, full comment threads
+- AJP bracket/division detail (results board is JS-rendered anonymously)

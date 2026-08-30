@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#141414" />
+  <meta name="description" content="Conquer pain, don't just manage it. Manish Singh — ATG Level 3 coach, AJP India champion, martial artist. Online & 1:1 coaching. (DRAFT — not for publication)" />
+  <title>Southpaw Aesthetic — Manish Singh · Strength &amp; Rehab Coach (DRAFT)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #141414;
+      --ink-2: #1c1c1c;
+      --gold: #ffd520;
+      --red: #b03a2e;
+      --teal: #2e9fd4;
+      --paper: #f2f0eb;
+      --muted: #9b978f;
+      --line: #2c2c2c;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--ink); color: var(--paper); font: 17px/1.65 Inter, system-ui, sans-serif; }
+    a { color: var(--gold); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .wrap { width: min(1080px, calc(100% - 40px)); margin: 0 auto; }
+    .display { font-family: Anton, Impact, sans-serif; text-transform: uppercase; letter-spacing: .01em; line-height: .95; }
+    .kicker { color: var(--gold); font-size: .78rem; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; }
+
+    /* draft banner */
+    .draftbar { background: var(--red); color: #fff; text-align: center; font-size: .82rem; font-weight: 600; padding: 7px 12px; letter-spacing: .06em; text-transform: uppercase; }
+
+    /* nav */
+    nav { position: sticky; top: 0; z-index: 10; background: #141414ee; backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+    nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 0; }
+    .wordmark { font-family: Anton, sans-serif; text-transform: uppercase; font-size: 1.05rem; color: var(--paper); letter-spacing: .04em; }
+    .wordmark span { color: var(--gold); }
+    nav .links { display: flex; gap: 20px; font-size: .9rem; font-weight: 600; }
+    nav .links a { color: var(--paper); }
+    .btn { display: inline-block; background: var(--gold); color: var(--ink); font-weight: 800; padding: 10px 20px; border-radius: 4px; letter-spacing: .04em; text-transform: uppercase; font-size: .88rem; }
+    .btn:hover { filter: brightness(1.06); text-decoration: none; }
+    .btn.ghost { background: transparent; color: var(--paper); border: 1px solid #4a4a4a; }
+    .btn.ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* hero */
+    header.hero { padding: 90px 0 70px; border-bottom: 1px solid var(--line); position: relative; overflow: hidden; }
+    header.hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(720px 420px at 85% 10%, #b03a2e33, transparent 65%); pointer-events: none; }
+    h1 { font-size: clamp(2.6rem, 8vw, 5.6rem); margin: 18px 0 20px; max-width: 15ch; }
+    h1 em { font-style: normal; color: var(--gold); }
+    .hero p.sub { color: var(--muted); font-size: 1.12rem; max-width: 52ch; margin: 0 0 30px; }
+    .ribbon { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 34px; }
+    .ribbon span { border: 1px solid var(--line); color: var(--paper); font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 8px 14px; border-radius: 999px; }
+    .ribbon span b { color: var(--gold); }
+    .cta-row { display: flex; gap: 14px; flex-wrap: wrap; }
+
+    section { padding: 72px 0; border-bottom: 1px solid var(--line); }
+    h2 { font-size: clamp(1.9rem, 4.5vw, 3rem); margin: 10px 0 14px; }
+    .lede { color: var(--muted); max-width: 64ch; margin: 0 0 34px; }
+
+    /* authority cards */
+    .cards4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+    .card { background: var(--ink-2); border: 1px solid var(--line); border-radius: 10px; padding: 22px; }
+    .card h3 { font-family: Anton, sans-serif; text-transform: uppercase; font-size: 1.05rem; margin: 0 0 8px; letter-spacing: .03em; }
+    .card p { margin: 0; color: var(--muted); font-size: .93rem; }
+    .card .tag { display: block; color: var(--gold); font-size: .72rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; margin-bottom: 10px; }
+    .card a { color: var(--paper); font-weight: 600; font-size: .85rem; }
+
+    /* method */
+    .moves { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 30px; }
+    .move { border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; background: linear-gradient(180deg, var(--ink-2), var(--ink)); }
+    .move b { display: block; font-family: Anton, sans-serif; text-transform: uppercase; font-weight: 400; letter-spacing: .04em; margin-bottom: 6px; }
+    .move span { color: var(--muted); font-size: .9rem; }
+
+    /* quote */
+    .bigquote { border-left: 4px solid var(--gold); padding: 6px 0 6px 26px; margin: 30px 0; max-width: 70ch; }
+    .bigquote p { font-size: 1.3rem; line-height: 1.5; margin: 0 0 10px; }
+    .bigquote cite { color: var(--muted); font-style: normal; font-size: .9rem; }
+    .timeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 30px; }
+    .tl { border-top: 2px solid var(--gold); padding-top: 12px; }
+    .tl b { color: var(--gold); font-family: Anton, sans-serif; font-weight: 400; letter-spacing: .04em; }
+    .tl p { margin: 4px 0 0; color: var(--muted); font-size: .92rem; }
+
+    /* about */
+    .about-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: start; }
+    @media (max-width: 800px) { .about-grid { grid-template-columns: 1fr; } }
+    .about blockquote { margin: 22px 0 0; border-left: 4px solid var(--red); padding-left: 20px; color: var(--paper); font-size: 1.05rem; }
+    .portrait { background: var(--ink-2); border: 1px solid var(--line); border-radius: 12px; padding: 26px; }
+    .portrait .face { font-family: Anton, sans-serif; font-size: 3.4rem; color: var(--gold); line-height: 1; }
+    .portrait dl { margin: 16px 0 0; } .portrait dt { font-size: .72rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-top: 14px; } .portrait dd { margin: 2px 0 0; font-size: .95rem; }
+
+    /* services */
+    .svc { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 30px; }
+    .service { background: var(--ink-2); border: 1px solid var(--line); border-radius: 12px; padding: 26px; display: flex; flex-direction: column; gap: 10px; }
+    .service.best { border-color: var(--gold); }
+    .service h3 { font-family: Anton, sans-serif; text-transform: uppercase; font-weight: 400; font-size: 1.2rem; margin: 0; letter-spacing: .04em; }
+    .service .for { color: var(--teal); font-size: .8rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .service p { color: var(--muted); font-size: .95rem; margin: 0; flex: 1; }
+
+    /* faq */
+    details { border-bottom: 1px solid var(--line); padding: 18px 0; }
+    summary { cursor: pointer; font-weight: 800; }
+    details p { color: var(--muted); margin: 12px 0 0; max-width: 68ch; }
+
+    /* final cta */
+    .final { text-align: center; padding: 90px 0; }
+    .final .display { font-size: clamp(2.2rem, 7vw, 4.6rem); }
+    .final p { color: var(--muted); max-width: 46ch; margin: 18px auto 34px; }
+
+    footer { padding: 40px 0 60px; color: var(--muted); font-size: .88rem; }
+    footer .wrap { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+    .trident { color: var(--gold); }
+    @media print { nav, .draftbar { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="draftbar">Draft v1 — built from the arjun.hk/manish research dossier · pending Manish's approval</div>
+
+  <nav>
+    <div class="wrap">
+      <a class="wordmark" href="#top">Southpaw <span>Aesthetic</span></a>
+      <div class="links">
+        <a href="#method">Method</a>
+        <a href="#proof">Proof</a>
+        <a href="#about">About</a>
+        <a href="#coaching">Coaching</a>
+      </div>
+      <a class="btn" href="https://www.instagram.com/southpawaesthetic/" rel="noopener">DM to Train</a>
+    </div>
+  </nav>
+
+  <header class="hero" id="top">
+    <div class="wrap">
+      <div class="kicker">Manish Singh · Strength &amp; Rehab Coach · Mohali, Punjab</div>
+      <h1 class="display">Conquer pain. <em>Don't just manage it.</em></h1>
+      <p class="sub">10+ years in the game. Martial artist. AJP India champion. I build people who move well, stay strong, and leave pain behind — no shortcuts, just consistent, intentional work.</p>
+      <div class="cta-row">
+        <a class="btn" href="https://www.instagram.com/southpawaesthetic/" rel="noopener">DM for Coaching</a>
+        <a class="btn ghost" href="#method">See the method</a>
+      </div>
+      <div class="ribbon">
+        <span><b>ATG</b> Level 3 Certified</span>
+        <span><b>AJP India</b> 2025 Champion</span>
+        <span><b>#1 Ranking</b> in India · June 2025</span>
+        <span><b>Featured</b> on The ATG Podcast</span>
+      </div>
+    </div>
+  </header>
+
+  <section id="authority">
+    <div class="wrap">
+      <div class="kicker">Receipts, not claims</div>
+      <h2 class="display">The credentials</h2>
+      <p class="lede">Every badge below links its official source.</p>
+      <div class="cards4">
+        <div class="card">
+          <span class="tag">Certification</span>
+          <h3>ATG Level 3 Coach</h3>
+          <p>Listed in ATG For Coaches' official directory — "Strength, pain free movement", Mohali. One of the first L3 coaches in the Eastern Hemisphere.</p>
+          <a href="https://map.atgforcoaches.com/coach/manish-singh" rel="noopener">View directory listing →</a>
+        </div>
+        <div class="card">
+          <span class="tag">Competition</span>
+          <h3>AJP India 2025 Gold</h3>
+          <p>Gold at the AJP Tour India National Jiu-Jitsu Championship, 21 June 2025 — and the #1 ranking in India in his division.</p>
+          <a href="https://ajptour.com/en/event/1196" rel="noopener">View event →</a>
+        </div>
+        <div class="card">
+          <span class="tag">Podcast</span>
+          <h3>The ATG Podcast</h3>
+          <p>Interviewed by Ben Patrick (Knees Over Toes Guy): "From Athlete to Life-Changer — Manish's Journey to ATG Level 3 Coach" (Jan 2025).</p>
+          <a href="https://open.spotify.com/show/5EGaFplsmrLQT9qOQaVERK" rel="noopener">Listen on Spotify →</a>
+        </div>
+        <div class="card">
+          <span class="tag">Lineage</span>
+          <h3>The ATG System</h3>
+          <p>Coached inside Ben Patrick's Athletic Truth Group framework, mentored by Keegan Smith — built on measurable, scalable progressions.</p>
+          <a href="https://www.atgonlinecoaching.com/articles/the-10-atg-principles" rel="noopener">The 10 ATG Principles →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="method">
+    <div class="wrap">
+      <div class="kicker">The method</div>
+      <h2 class="display">Slow is a weapon.</h2>
+      <p class="lede">Built on the ATG progression framework: start from the ground up, train both short and long ranges, go light-to-heavy, slow-to-fast. Every session scales to where your body is today — that's how pain loses its grip and performance compounds. Your body will thank you in ten years for what you're doing today.</p>
+      <div class="moves">
+        <div class="move"><b>ATG Split Squat</b><span>Single-leg strength that exposes and fixes imbalances before they become injuries.</span></div>
+        <div class="move"><b>Nordic Curl</b><span>Hamstring armour — built progressively from zero.</span></div>
+        <div class="move"><b>Step-Up</b><span>Knee ability you can actually use, on stairs and on the mat.</span></div>
+        <div class="move"><b>Sled Work</b><span>Strength with zero eccentric soreness. The base-builder.</span></div>
+        <div class="move"><b>Loaded Carries &amp; Dips</b><span>Full-range upper-body strength at optimal ranges of motion.</span></div>
+        <div class="move"><b>Tibialis &amp; Calf Work</b><span>The overlooked lower-leg bullets that keep you in the fight.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="proof">
+    <div class="wrap">
+      <div class="kicker">Proof</div>
+      <h2 class="display">Zero to thirty kilos.</h2>
+      <div class="bigquote">
+        <p>"From doing zero pushups and zero pull-ups… to weighted ring pushups, spinning kicks, and 30kg weighted pull-ups. Twice a week is all we get in person. Everything else — the homework, the extra reps, the discipline to show up on the days I'm not watching — that's all him."</p>
+        <cite>— Manish on a client's transformation · <a href="https://www.instagram.com/p/DbPyhWquc6z/" rel="noopener">the original post</a></cite>
+      </div>
+      <div class="timeline">
+        <div class="tl"><b>2008</b><p>Begins studying training and nutrition — the coach he needed didn't exist yet.</p></div>
+        <div class="tl"><b>2024</b><p>Earns ATG Level 3 — "Finally in the league", with gratitude to Ben Patrick and Keegan Smith.</p></div>
+        <div class="tl"><b>Jun 2025</b><p>Gold at AJP Tour India National Championship. #1 ranking in India. "This is just the first chapter."</p></div>
+        <div class="tl"><b>Jan 2025</b><p>Featured on The ATG Podcast by Ben Patrick — "one of the first Level 3 ATG coaches in the Eastern Hemisphere."</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" class="about">
+    <div class="wrap about-grid">
+      <div>
+        <div class="kicker">About</div>
+        <h2 class="display">The person he needed in 2008.</h2>
+        <p style="color:var(--muted)">Manish Singh is a strength &amp; rehab coach and martial artist based in Mohali, Punjab. Boxing came first — "my first love" — then kickboxing, MMA, and competitive jiu-jitsu. Alongside the fight life: eighteen years of studying how bodies actually adapt, culminating in ATG Level 3 certification and a coaching practice built on one promise — help people conquer pain, not just manage it.</p>
+        <blockquote>"It's time to be the person I needed when I was looking for a way to increase my athletic potential… way back in 2008. I've been studying everything possible since then."</blockquote>
+        <p style="color:var(--muted); margin-bottom:0">He trains outdoors in the Himalayan foothills as much as under a barbell, and signs off the way he lives: <em>HAR HAR MAHADEV 🔱</em></p>
+      </div>
+      <div class="portrait">
+        <div class="face">⚔️</div>
+        <dl>
+          <dt>Base</dt><dd>Mohali, Punjab, India · online worldwide</dd>
+          <dt>Disciplines</dt><dd>Strength &amp; rehab · boxing · kickboxing · jiu-jitsu</dd>
+          <dt>Coaching since</dt><dd>10+ years · ATG L3 certified</dd>
+          <dt>Mission</dt><dd>"Help 10,000 people live pain-free." — as stated on The ATG Podcast</dd>
+          <dt>Training base</dt><dd>Tricity · Himalayan foothills</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section id="coaching">
+    <div class="wrap">
+      <div class="kicker">Coaching</div>
+      <h2 class="display">Train with me.</h2>
+      <p class="lede">Three ways in — all starting with a message. Corporate clients, athletes, seniors, women, and the general population: if you move, this works for you.</p>
+      <div class="svc">
+        <div class="service best">
+          <h3>Online Coaching</h3>
+          <span class="for">Anywhere · monthly</span>
+          <p>Individual programming, video check-ins, and the homework culture that took one client from zero to 30-kilogram weighted pull-ups. Your discipline, my map.</p>
+          <a class="btn" href="https://www.instagram.com/southpawaesthetic/" rel="noopener">DM "READY"</a>
+        </div>
+        <div class="service">
+          <h3>Online Personal Training</h3>
+          <span class="for">Live, remote</span>
+          <p>Real-time coached sessions over video — form corrected live, progressions adjusted on the spot. The gym comes to you.</p>
+          <a class="btn ghost" href="https://www.instagram.com/southpawaesthetic/" rel="noopener">DM "TRAIN"</a>
+        </div>
+        <div class="service">
+          <h3>1:1 Personal Training</h3>
+          <span class="for">Mohali / Tricity · in person</span>
+          <p>Hands-on coaching, assessment-first. Twice a week changes people — the story above proves it. Limited slots.</p>
+          <a class="btn ghost" href="https://www.instagram.com/southpawaesthetic/" rel="noopener">DM "1:1"</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="kicker">Questions</div>
+      <h2 class="display">Straight answers.</h2>
+      <details open>
+        <summary>Is this physiotherapy or medical treatment?</summary>
+        <p>No. This is strength &amp; movement coaching built on the ATG framework — progressive, measurable training scaled to your current ability. It is not medical diagnosis or injury treatment.</p>
+      </details>
+      <details>
+        <summary>Does online coaching actually work?</summary>
+        <p>The 30-kilogram weighted pull-up story happened on two in-person sessions a week — everything else was homework and discipline over a shared plan. That's the model, and it's documented on my Instagram.</p>
+      </details>
+      <details>
+        <summary>I'm not a fighter. Is this for me?</summary>
+        <p>Fighters are my loudest clients, not my only ones. Corporate professionals, seniors, women, and anyone who wants to move without pain train here — the method scales from zero to champion.</p>
+      </details>
+      <details>
+        <summary>What is ATG?</summary>
+        <p>Athletic Truth Group — Ben Patrick's ("Knees Over Toes Guy") training system: build from the ground up, both short and long ranges, light to heavy, slow to fast. I'm an ATG Level 3 certified coach, listed in ATG's official directory.</p>
+      </details>
+      <details>
+        <summary>Where are you based?</summary>
+        <p>Mohali, Punjab — serving the Tricity in person and the world online. DM to start.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="wrap">
+      <div class="kicker">Your move</div>
+      <div class="display">Born to fight.<br />Live to help.</div>
+      <p>One message starts it. Tell me where it hurts, or where you want to go.</p>
+      <a class="btn" href="https://www.instagram.com/southpawaesthetic/" rel="noopener">DM @southpawaesthetic</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div>© 2026 Southpaw Aesthetic · Manish Singh · <span class="trident">HAR HAR MAHADEV 🔱</span></div>
+      <div><a href="https://map.atgforcoaches.com/coach/manish-singh" rel="noopener">ATG Directory</a> · <a href="https://ajptour.com/en/event/1196" rel="noopener">AJP Tour</a> · <a href="https://open.spotify.com/show/5EGaFplsmrLQT9qOQaVERK" rel="noopener">ATG Podcast</a> · <a href="https://www.instagram.com/southpawaesthetic/" rel="noopener">Instagram</a></div>
+    </div>
+  </footer>
+</body>
+</html>
