@@ -9,9 +9,9 @@ for img in $(grep -oE 'src="[^"]+\.(png|jpg|jpeg|svg|webp)"' index.html | sed -E
   test -f "$img" || { echo "MISSING asset: $img"; exit 1; }
 done
 
-# Validate snake/index.html
-test -s snake/index.html && echo "snake/index.html present and non-empty"
-grep -q "</html>" snake/index.html && echo "snake/html closes properly"
-# snake game has no external assets (all inline)
+# Validate the research report page
+test -s manish/index.html && echo "manish/index.html present and non-empty"
+grep -q "</html>" manish/index.html && echo "manish/html closes properly"
 
 echo "static validation OK"
+
