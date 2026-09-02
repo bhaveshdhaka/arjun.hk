@@ -98,6 +98,43 @@
       padding: .3rem 1rem;
       display: inline-block;
     }
+    .pay {
+      background: #ffffffdd;
+      border-radius: 2rem;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      text-align: center;
+      box-shadow: 0 8px 24px #00000022, 0 4px 0 #ffffff88;
+      animation: card-in .5s cubic-bezier(.34,1.56,.64,1) both;
+      animation-delay: .6s;
+    }
+    .pay-title {
+      font-size: clamp(1.3rem, 5vw, 1.8rem);
+      font-weight: 900;
+      color: #5a3a1a;
+      margin-bottom: 1rem;
+    }
+    .pay-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: .6rem;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      font-size: clamp(.95rem, 3.5vw, 1.15rem);
+      font-weight: 800;
+      color: #5a3a1a;
+      background: #fff0f5;
+      border-radius: 999px;
+      padding: .4rem 1rem;
+      box-shadow: 0 3px 0 #ffe1ec;
+      transition: transform .2s ease;
+    }
+    .chip:active { transform: scale(.95); }
+    .chip svg { width: 1.3em; height: 1.3em; flex-shrink: 0; }
     footer {
       text-align: center;
       margin-top: 3rem;
@@ -148,6 +185,44 @@
         <img class="card-img" src="images/icecream.png" alt="Chocolate ice cream cone" />
         <div class="card-name">Ice-Cream</div>
         <div class="card-price">$18 dollarbucks</div>
+      </div>
+    </div>
+    <div class="pay">
+      <div class="pay-title">We accept dollarbucks 💳</div>
+      <div class="pay-row">
+        <span class="chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ff5e7e" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <path d="M6.8 9.2a4 4 0 0 1 0 5.6" />
+            <path d="M9.9 7a8.5 8.5 0 0 1 0 10" />
+            <path d="M13 4.9a13 13 0 0 1 0 14.2" />
+            <path d="M16.1 2.8a17.5 17.5 0 0 1 0 18.4" />
+          </svg>
+          Tap / NFC
+        </span>
+        <span class="chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+            <path d="M12 3.4a8.6 8.6 0 0 1 8.6 8.6" stroke="#f58220" />
+            <path d="M20.6 12a8.6 8.6 0 0 1 -8.6 8.6" stroke="#0072bc" />
+            <path d="M12 20.6a8.6 8.6 0 0 1 -8.6 -8.6" stroke="#f58220" />
+            <path d="M3.4 12a8.6 8.6 0 0 1 8.6 -8.6" stroke="#0072bc" />
+            <circle cx="12" cy="12" r="2.6" fill="#e87722" stroke="none" />
+          </svg>
+          Octopus
+        </span>
+        <span class="chip">
+          <svg viewBox="0 0 44 24" aria-hidden="true">
+            <text x="22" y="17.5" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" font-style="italic" letter-spacing="0.5" fill="#1a1f71">VISA</text>
+          </svg>
+          Visa
+        </span>
+        <span class="chip">
+          <svg viewBox="0 0 36 24" aria-hidden="true">
+            <circle cx="14" cy="12" r="8.5" fill="#eb001b" />
+            <circle cx="22" cy="12" r="8.5" fill="#f79e1b" />
+            <path d="M18 4.5a8.5 8.5 0 0 1 0 15a8.5 8.5 0 0 1 0 -15z" fill="#ff5f00" />
+          </svg>
+          Mastercard
+        </span>
       </div>
     </div>
     <footer> Come feed the caterpillar after lunch! 🐛</footer>
