@@ -1,7 +1,7 @@
-import { Store } from './store.js?v=09070529';
+import { Store } from './store.js?v=09070535';
 
 const registry = new Map();
-const pts = (ms) => 100 + Math.max(0, 50 - Math.floor(ms / 1000) * 5);
+const ptsFor = (q, ms) => (q && q.type === 'typein' ? 150 : 100) + Math.max(0, 50 - Math.floor(ms / 1000) * 5);
 const shuffle = (arr) => {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -116,7 +116,7 @@ export const QuizEngine = {
       </div>`;
     };
 
-    const KEYBAR = '<div class="keybar">⌨️ <kbd>1</kbd>–<kbd>9</kbd> answer · <kbd>Enter</kbd> next · <kbd>Esc</kbd> quit</div>';
+    const KEYBAR = '<div class="keybar">⌨️ <kbd>1</kbd>–<kbd>9</kbd> answer · <kbd>T</kbd> choices ⇄ type-in · <kbd>Enter</kbd> next · <kbd>Esc</kbd> quit</div>';
 
     const endSession = () => {
       clearTimeout(state.timer);
@@ -154,18 +154,52 @@ export const QuizEngine = {
         <div class="feedback" id="fb"></div>
         ${KEYBAR}`;
       def.render(root.querySelector('#stage'), q);
-      const area = root.querySelector('#playarea');
-      area.innerHTML = `
-        <div class="answers">${q.choices.map((c, i) =>
-          `<button class="answer" data-opt="${i}"><span class="num">${i + 1}</span> ${esc(c)}</button>`
-        ).join('')}</div>`;
+      renderPlayarea(q);
       const nx = state.qs[state.idx + 1];
       if (nx && def.preload) def.preload(nx);
+    };
+
+    const renderPlayarea = (q) => {
+      const area = root.querySelector('#playarea');
+      if (!area) return;
+      const ui = q.ui || q.type || 'choices';
+      if (ui === 'typein') {
+        area.innerHTML = `
+          <div class="typein">
+            <input class="field" data-typein inputmode="text" autocomplete="off" autocapitalize="words" placeholder="Type the country…" aria-label="Type the country name"/>
+            <button class="btn" data-check>Check ✓</button>
+          </div>`;
+        const inp = area.querySelector('[data-typein]');
+        if (inp) inp.focus({ preventScroll: true });
+      } else {
+        area.innerHTML = `
+          <div class="answers">${q.choices.map((c, i) =>
+            `<button class="answer" data-opt="${i}"><span class="num">${i + 1}</span> ${esc(c)}</button>`
+          ).join('')}</div>`;
+      }
+    };
+
+    const toggleUi = () => {
+      if (state.screen !== 'play' || state.answered) return;
+      const q = state.qs[state.idx];
+      q.ui = (q.ui || q.type) === 'typein' ? 'choices' : 'typein';
+      renderPlayarea(q);
     };
 
     const headerSync = () => {
       const top = root.querySelector('.topbar');
       if (top) { top.outerHTML = header(); }
+    };
+
+    const record = (ok, gained, q, ms) => {
+      state.results.push(ok);
+      if (ok) { state.correct += 1; state.score += gained; state.streak += 1; }
+      else { state.streak = 0; }
+      if (def.srsKey && def.updateSrs) {
+        const k = def.srsKey(q);
+        Store.updateSrs(def.id, k, def.updateSrs(Store.load(def.id).srs[k], ok, ms, Date.now()));
+      }
+      headerSync();
     };
 
     const answer = (i) => {
@@ -174,14 +208,8 @@ export const QuizEngine = {
       const q = state.qs[state.idx];
       const ms = performance.now() - state.qStart;
       const ok = i === q.answer;
-      const gained = ok ? pts(ms) : 0;
-      state.results.push(ok);
-      if (ok) { state.correct += 1; state.score += gained; state.streak += 1; }
-      else { state.streak = 0; }
-      if (def.srsKey && def.updateSrs) {
-        const k = def.srsKey(q);
-        Store.updateSrs(def.id, k, def.updateSrs(Store.load(def.id).srs[k], ok, ms, Date.now()));
-      }
+      const gained = ok ? ptsFor(q, ms) : 0;
+      record(ok, gained, q, ms);
       root.querySelectorAll('.answer').forEach((b) => {
         b.disabled = true;
         const n = Number(b.dataset.opt);
@@ -205,7 +233,40 @@ export const QuizEngine = {
           if (ex) showExplain(ex);
         }
       }
-      headerSync();
+    };
+
+    const submitTypein = () => {
+      if (state.answered) return;
+      const inp = root.querySelector('[data-typein]');
+      const val = inp ? inp.value.trim() : '';
+      if (!val) return;
+      state.answered = true;
+      const q = state.qs[state.idx];
+      const ms = performance.now() - state.qStart;
+      const res = def.checkTypein ? def.checkTypein(q, val) : { ok: false, close: false, matched: null };
+      const ok = !!res.ok;
+      const gained = ok ? ptsFor(q, ms) : 0;
+      record(ok, gained, q, ms);
+      const checkBtn = root.querySelector('[data-check]');
+      const inpEl = root.querySelector('[data-typein]');
+      if (inpEl) inpEl.disabled = true;
+      if (checkBtn) checkBtn.disabled = true;
+      const fb = root.querySelector('#fb');
+      if (ok) {
+        fb.innerHTML = `${CHEERS[Math.floor(Math.random() * CHEERS.length)]} ${esc(q.country)}! <span class="cont">tap to continue</span>`;
+        fb.className = 'feedback good';
+        if (checkBtn) checkBtn.insertAdjacentHTML('beforeend', `<span class="pts">+${gained}</span>`);
+        state.awaitNext = true;
+        state.timer = setTimeout(next, 1000);
+      } else {
+        fb.innerHTML = `${res.close ? 'So close! ' : ''}It was <b>${esc(q.country)}</b> — we'll see it again soon <span class="cont">tap to continue</span>`;
+        fb.className = 'feedback bad';
+        state.awaitNext = true;
+        if (res.matched && def.explain) {
+          const ex = def.explain(q, res.matched);
+          if (ex) showExplain(ex);
+        }
+      }
     };
 
     const showExplain = (ex) => {
@@ -436,6 +497,7 @@ export const QuizEngine = {
       if (state.awaitNext && state.screen === 'play') { next(); return; }
       const opt = e.target.closest('[data-opt]');
       if (opt) answer(Number(opt.dataset.opt));
+      if (e.target.closest('[data-check]')) submitTypein();
     });
 
     root.addEventListener('input', (e) => {
@@ -460,11 +522,24 @@ export const QuizEngine = {
 
     document.addEventListener('keydown', (e) => {
       if (state.screen === 'play') {
+        const typing = e.target && e.target.tagName === 'INPUT' && e.target.hasAttribute('data-typein');
+        if (typing) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (state.answered) next();
+            else submitTypein();
+          }
+          return;
+        }
         if (e.key >= '1' && e.key <= '9') {
+          const q = state.qs[state.idx];
+          if ((q.ui || q.type) === 'typein') return;
           const btn = root.querySelector(`[data-opt="${Number(e.key) - 1}"]`);
           if (btn) answer(Number(e.key) - 1);
         } else if (e.key === 'Enter') {
           if (state.answered) next();
+        } else if (e.key.toLowerCase() === 't') {
+          toggleUi();
         } else if (e.key === 'Escape') {
           endSession();
         }

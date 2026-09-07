@@ -1,6 +1,6 @@
-import { QuizEngine } from '../../assets/js/engine.js?v=09070529';
-import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair } from './build.js?v=09070529';
-import { REGIONS } from './data.js?v=09070529';
+import { QuizEngine } from '../../assets/js/engine.js?v=09070535';
+import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair, checkTypein } from './build.js?v=09070535';
+import { REGIONS } from './data.js?v=09070535';
 
 QuizEngine.register({
   id: 'flags',
@@ -8,15 +8,17 @@ QuizEngine.register({
   emoji: '🚩',
   tagline: 'Guess the flag — win dollarbucks!',
   presets: [
-    { label: '⚡ Quick', sub: '10 · World', cfg: { region: ['World'], count: 10 } },
-    { label: '🎯 Regular', sub: '25 · World', cfg: { region: ['World'], count: 25 } },
-    { label: '🏔️ Marathon', sub: '50 · World', cfg: { region: ['World'], count: 50 } },
+    { label: '⚡ Quick', sub: '10 · World', cfg: { region: ['World'], count: 10, mode: 'smart' } },
+    { label: '🎯 Regular', sub: '25 · World', cfg: { region: ['World'], count: 25, mode: 'smart' } },
+    { label: '🏔️ Marathon', sub: '50 · World', cfg: { region: ['World'], count: 50, mode: 'smart' } },
   ],
   config: [
     { key: 'region', type: 'chips', label: 'Regions — pick any mix', all: 'World', def: ['World'],
       options: [{ value: 'World', label: `🌍 Whole World · ${WORLD_COUNT}` },
         ...REGIONS.map((r) => ({ value: r, label: `${GLOBE[r] || '🌍'} ${r} · ${byRegion(r).length}` }))] },
     { key: 'count', type: 'number', label: 'How many flags?', def: 10, min: 1, max: WORLD_COUNT },
+    { key: 'mode', type: 'select', label: 'Answer how?', def: 'smart',
+      options: [{ value: 'smart', label: '🧠 Smart mix (recommended)' }, { value: 'choices', label: '🔢 Multiple choice' }, { value: 'typein', label: '⌨️ Type-in' }] },
     { key: 'focus', type: 'select', label: 'Practice what?', def: 'All',
       options: [{ value: 'All', label: '🎲 Mixed' }, { value: 'Weak', label: '🔁 My weak flags' }, { value: 'New', label: '✨ New flags' }] },
   ],
@@ -38,6 +40,8 @@ QuizEngine.register({
   flagSrc: (code) => `img/${code}.svg`,
 
   updateSrs: (entry, ok, ms, now) => applyResult(entry, ok, ms, now),
+
+  checkTypein,
 
   explain: (q, pickedName) => explainPair(q, pickedName),
 

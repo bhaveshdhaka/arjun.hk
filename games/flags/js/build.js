@@ -197,7 +197,7 @@ export const buildQuestions = (cfg, srs = {}, now = Date.now()) => {
   const n = Math.max(1, Math.min(Math.floor(Number(cfg.count)) || 10, pool.length));
   const picks = selectPicks(cfg, pool, n, srs, now);
   const deck = cfg.focus === 'Weak' ? picks : dealSmart(picks);
-  return deck.map((c) => {
+  return assignTypes(deck.map((c) => {
     const choices = shuffle([c, ...pickDistractors(pool, c, 3)]);
     return {
       c: c.c,
@@ -206,7 +206,7 @@ export const buildQuestions = (cfg, srs = {}, now = Date.now()) => {
       choices: choices.map((x) => x.n),
       answer: choices.findIndex((x) => x.c === c.c),
     };
-  });
+  }), srs, cfg.mode);
 };
 
 export const explainPair = (q, pickedName) => {
@@ -225,6 +225,92 @@ export const explainPair = (q, pickedName) => {
     family: famA.name,
     text,
   };
+};
+
+const strip = (s) => s.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim();
+
+export const ALIASES = {
+  usa: 'us', 'united states of america': 'us', america: 'us',
+  uk: 'gb', britain: 'gb', 'great britain': 'gb', england: 'gb',
+  uae: 'ae', 'emirates': 'ae',
+  'south korea': 'kr', korea: 'kr',
+  holland: 'nl',
+  'czech republic': 'cz', czechia: 'cz',
+  burma: 'mm',
+  macedonia: 'mk',
+  swaziland: 'sz',
+  'cape verde': 'cv',
+  'ivory coast': 'ci',
+  'east timor': 'tl',
+  turkiye: 'tr', turkey: 'tr',
+  persia: 'ir',
+  'vatican city': 'va', vatican: 'va',
+  'bosnia': 'ba',
+  'russia federation': 'ru',
+  'democratic republic of congo': 'cd', drc: 'cd',
+  'republic of congo': 'cg', congo: 'cg',
+  'south sudan republic': 'ss',
+  'sao tome': 'st',
+  'north korea': 'kp', 'dprk': 'kp',
+  'lao': 'la',
+  'syrian arab republic': 'sy',
+  'islamic republic of iran': 'ir',
+};
+
+const NORM_NAME_TO_CODE = new Map(COUNTRIES.map((c) => [strip(c.n), c.c]));
+
+export const levenshtein = (a, b) => {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[b.length];
+};
+
+export const resolveName = (input) => {
+  const norm = strip(input || '');
+  if (!norm) return null;
+  if (NORM_NAME_TO_CODE.has(norm)) return NORM_NAME_TO_CODE.get(norm);
+  if (ALIASES[norm]) return ALIASES[norm];
+  for (const [name, code] of Object.entries(ALIASES)) {
+    if (levenshtein(norm, name) <= 1) return code;
+  }
+  let best = null, bestD = 3;
+  for (const [name, code] of NORM_NAME_TO_CODE) {
+    const d = levenshtein(norm, name);
+    if (d < bestD) { bestD = d; best = code; }
+  }
+  return bestD <= (norm.length > 6 ? 2 : 1) ? best : null;
+};
+
+export const checkTypein = (q, input) => {
+  const norm = strip(input || '');
+  const target = strip(q.country);
+  const resolved = resolveName(input);
+  const matchedName = resolved && resolved !== q.c ? (CODE_TO_COUNTRY.get(resolved) || {}).n || null : null;
+  if (resolved === q.c) return { ok: true, close: false, matched: null };
+  const d = levenshtein(norm, target);
+  const tol = target.length > 6 ? 2 : 1;
+  if (d <= tol || matchedName) return { ok: false, close: d <= tol, matched: matchedName };
+  return { ok: false, close: false, matched: null };
+};
+
+export const assignTypes = (qs, srs = {}, mode = 'choices') => {
+  if (mode === 'typein') return qs.map((q) => ({ ...q, type: 'typein' }));
+  if (mode === 'smart') {
+    return qs.map((q) => {
+      const e = srs[`flag:${q.c}`];
+      return { ...q, type: e && e.attempts && e.box >= 4 ? 'typein' : 'choices' };
+    });
+  }
+  return qs.map((q) => ({ ...q, type: 'choices' }));
 };
 
 export const quotas = (n, pool) => {

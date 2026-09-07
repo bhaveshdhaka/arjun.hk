@@ -223,3 +223,14 @@ footer { text-align: center; margin-top: 2rem; font-weight: 700; color: #7c4a2a;
   background: #fff8e8; border: 2px solid #ffe29a; border-radius: 1.1rem;
   padding: .85rem 1rem; font-weight: 800; line-height: 1.5; font-size: .98rem; margin-bottom: 1rem;
 }
+
+.typein { display: flex; flex-direction: column; gap: .7rem; }
+.field {
+  width: 100%; font-size: 1.3rem; font-weight: 800; padding: .95rem 1.1rem;
+  border-radius: 1.1rem; border: 3px solid #ffb3c1; background: #fff; color: #5a3a1a;
+  outline: none; font-family: inherit;
+}
+.field:focus { border-color: #ff5e7e; box-shadow: 0 0 0 4px #ff5e7e22; }
+.field:disabled { opacity: .6; }
+.field::placeholder { color: #c9a98a; font-weight: 700; }
+.typein .btn { align-self: center; }

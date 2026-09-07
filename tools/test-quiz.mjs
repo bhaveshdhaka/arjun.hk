@@ -91,5 +91,30 @@ check('stats aggregates ranks + weak', (() => {
   return st.seen === 3 && st.ranks.champion === 1 && st.weak.length >= 1 && st.due === 2;
 })());
 
+check('typein: exact ok', build.checkTypein({ c: 'fr', country: 'France' }, 'France').ok === true);
+check('typein: case/space insensitive', build.checkTypein({ c: 'fr', country: 'France' }, '  FRANCE ').ok === true);
+check('typein: 1-char typo forgiven as correct', build.checkTypein({ c: 'fr', country: 'France' }, 'Ftance').ok === true);
+check('typein: alias USA ok', build.checkTypein({ c: 'us', country: 'United States' }, 'USA').ok === true);
+check('typein: alias UK ok', build.checkTypein({ c: 'gb', country: 'United Kingdom' }, 'UK').ok === true);
+check('typein: wrong far -> not close', (() => {
+  const r = build.checkTypein({ c: 'fr', country: 'France' }, 'Brazil');
+  return r.ok === false && r.close === false;
+})());
+check('typein: long-name 1-char typo forgiven', build.checkTypein({ c: 'ch', country: 'Switzerland' }, 'Switzerlandd').ok === true);
+check('typein: matched country name returned for near-miss', build.checkTypein({ c: 'fr', country: 'France' }, 'Germany').matched === 'Germany');
+check('resolveName: garbage -> null', build.resolveName('xyzzyplugh') === null);
+
+const qsSmart = build.assignTypes(
+  [{ c: 'de', country: 'Germany', region: 'Europe', choices: [], answer: 0 },
+   { c: 'fr', country: 'France', region: 'Europe', choices: [], answer: 0 }],
+  { 'flag:de': { box: 4, attempts: 6, correct: 5, streak: 4, avgMs: 900, due: now, lastAt: now } },
+  'smart'
+);
+check('smart mixer: mastered flag -> type-in', qsSmart[0].type === 'typein');
+check('smart mixer: learning flag -> choices', qsSmart[1].type === 'choices');
+check('mode choices -> all choices', build.assignTypes([{ c: 'de', country: 'Germany', region: 'Europe', choices: [], answer: 0 }], {}, 'choices')[0].type === 'choices');
+check('mode typein -> all type-in', build.assignTypes([{ c: 'de', country: 'Germany', region: 'Europe', choices: [], answer: 0 }], {}, 'typein')[0].type === 'typein');
+check('buildQuestions honors mode', run({ region: ['World'], count: 5, mode: 'typein' }, {}, now).every((q) => q.type === 'typein'));
+
 if (failures) { console.error(`\n${failures} test(s) failed`); process.exit(1); }
 console.log('\nquiz logic tests OK');
