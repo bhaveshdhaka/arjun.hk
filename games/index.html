@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#ffe29a" />
+  <title>The Play Room — Games &amp; Quizzes</title>
+  <link rel="stylesheet" href="assets/css/base.css" />
+  <style>
+    .flagrow { display: flex; gap: .55rem; margin: .2rem 0; }
+    .flagrow img { width: 3.4rem; height: auto; border-radius: .45rem; box-shadow: 0 3px 8px #00000026; animation: float 3s ease-in-out infinite; }
+    .flagrow img:nth-child(2) { animation-delay: .35s; }
+    .flagrow img:nth-child(3) { animation-delay: .7s; }
+    .flagrow img:nth-child(4) { animation-delay: 1.05s; }
+    .herotop { display: flex; align-items: center; gap: .8rem; }
+    .cardlink { text-decoration: none; color: inherit; display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a class="chip" href="../">🏠 arjun.hk</a>
+      <span style="display:flex;gap:.4rem" id="profiles"></span>
+    </div>
+    <h1 class="title">The Play Room 🎮</h1>
+    <div class="sub">Games &amp; quizzes — win dollarbucks!</div>
+    <div class="statrow" id="totals"></div>
+    <div class="grid">
+      <a class="cardlink" href="flags/">
+        <div class="card hero">
+          <div class="herotop">
+            <span class="em">🚩</span>
+            <div>
+              <h2>Flags of the World</h2>
+              <p>Guess the flag — beat your best!</p>
+            </div>
+          </div>
+          <div class="flagrow">
+            <img src="flags/img/fr.svg" alt="" draggable="false"/>
+            <img src="flags/img/jp.svg" alt="" draggable="false"/>
+            <img src="flags/img/br.svg" alt="" draggable="false"/>
+            <img src="flags/img/ke.svg" alt="" draggable="false"/>
+          </div>
+          <div class="meta" id="flagsMeta"></div>
+          <div class="herorow">
+            <span class="btn">▶ Play</span>
+            <span class="best" id="flagsBest"></span>
+          </div>
+        </div>
+      </a>
+      <div class="card soon"><span class="em">🏛️</span><h3>World Capitals</h3><span class="pill">Soon</span></div>
+      <div class="card soon"><span class="em">🔢</span><h3>Math Machine</h3><span class="pill">Soon</span></div>
+      <div class="card soon"><span class="em">🐨</span><h3>Animal Kingdom</h3><span class="pill">Soon</span></div>
+    </div>
+    <footer>the caterpillar is watching you play 🐛</footer>
+  </div>
+  <script type="module">
+    import { Store } from './assets/js/store.js';
+
+    const render = () => {
+      const p = Store.profile();
+      document.getElementById('profiles').innerHTML = Store.profiles.map((name) =>
+        `<button class="chip ${name === p ? 'on' : 'ghost'}" data-p="${name}">${name === 'Arjun' ? '👑' : '👤'} ${name}</button>`
+      ).join('');
+      const s = Store.load('flags').totals;
+      document.getElementById('totals').innerHTML = `
+        <span class="chip">⏱ ${Math.round(s.timeMs / 60000)} min played</span>
+        <span class="chip">💰 ${s.score} dollarbucks</span>
+        <span class="chip">🎮 ${s.plays} games</span>`;
+      document.getElementById('flagsMeta').textContent =
+        s.seen ? `Best score ${s.best} · ${Math.round(100 * s.correct / s.seen)}% correct so far` : '250 flags · 6 regions · multiple choice';
+      document.getElementById('flagsBest').textContent = s.best ? `🏆 Best: ${s.best}` : '🚀 First game?';
+    };
+
+    document.getElementById('profiles').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-p]');
+      if (b) { Store.setProfile(b.dataset.p); render(); }
+    });
+
+    render();
+  </script>
+</body>
+</html>

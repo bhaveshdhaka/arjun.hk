@@ -135,6 +135,24 @@
     }
     .chip:active { transform: scale(.95); }
     .chip svg { width: 1.3em; height: 1.3em; flex-shrink: 0; }
+    .games-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      text-decoration: none;
+      font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+      font-weight: 900;
+      color: #fff;
+      background: linear-gradient(180deg, #ff8f5e, #ff5e7e);
+      border-radius: 999px;
+      padding: 1rem 1.5rem;
+      margin-top: 1.5rem;
+      box-shadow: 0 6px 0 #c9355a, 0 12px 24px #ff5e7e55;
+      animation: card-in .5s cubic-bezier(.34,1.56,.64,1) both;
+      animation-delay: .7s;
+    }
+    .games-link:active { transform: translateY(3px); box-shadow: 0 3px 0 #c9355a; }
     footer {
       text-align: center;
       margin-top: 3rem;
@@ -225,6 +243,7 @@
         </span>
       </div>
     </div>
+    <a class="games-link" href="games/">🎮 Play games in the Play Room →</a>
     <footer> Come feed the caterpillar after lunch! 🐛</footer>
   </div>
 </body>
