@@ -189,6 +189,13 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", srv.handleHealth)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{"service": "arjun-games-api", "ok": "true"})
+	})
 	mux.HandleFunc("/v1/login", withCORS(srv.handleLogin))
 	mux.HandleFunc("/v1/state", withCORS(srv.handleState))
 	mux.HandleFunc("/v1/sync", withCORS(srv.handleSync))
