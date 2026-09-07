@@ -1,4 +1,4 @@
-import { Store } from './store.js?v=09070535';
+import { Store } from './store.js?v=09070540';
 
 const registry = new Map();
 const ptsFor = (q, ms) => (q && q.type === 'typein' ? 150 : 100) + Math.max(0, 50 - Math.floor(ms / 1000) * 5);
@@ -284,6 +284,15 @@ export const QuizEngine = {
               </div>`).join('<div class="vs">VS</div>')}
           </div>
           <div class="story">${esc(ex.text)}</div>
+          ${ex.others && ex.others.length ? `
+            <div class="famcap">The whole family — spot the differences:</div>
+            <div class="famrow">
+              ${ex.others.map((f) => `
+                <div class="fmini">
+                  <img src="${def.flagSrc ? def.flagSrc(f.code) : ''}" alt="${esc(f.label)}" draggable="false"/>
+                  <div class="fname">${esc(f.label)}</div>
+                </div>`).join('')}
+            </div>` : ''}
           <button class="btn">Got it 👍</button>
         </div>`;
       ov.querySelector('.btn').addEventListener('click', () => { ov.remove(); next(); });

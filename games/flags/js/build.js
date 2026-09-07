@@ -89,6 +89,11 @@ export const pairKey = (a, b) => [a, b].sort().join('-');
 
 export const PAIR_LESSONS = {
   'ro-td': "Chad's blue is darker, like night 🌙 — Romania's is brighter, like daytime sky. Same stripes, different blue!",
+  'md-ro': "Romania is plain stripes. Moldova puts its eagle emblem 🦅 right in the middle of the same blue-yellow-red.",
+  'md-td': "Chad is plain stripes. Moldova squeezes its eagle emblem 🦅 into the middle of the same stripes.",
+  'ad-md': "Both wear emblems! Moldova's eagle holds a shield; Andorra's coat of arms is a quartered shield without an eagle.",
+  'ad-ro': "Romania: plain blue-yellow-red stripes. Andorra: same stripes with its coat of arms sitting in the middle.",
+  'ad-td': "Chad: plain stripes, dark night-blue. Andorra: brighter blue with its coat of arms in the centre.",
   'id-pl': "Indonesia: red fire on top 🔥, white clouds below. Poland: snow on top ❄️, red roof below. Upside-down twins!",
   'id-mc': "Almost identical twins! Monaco's red is brighter and the country is tiny — Indonesia is a giant of islands.",
   'mc-pl': "Monaco: red on top, white below, like Indonesia. Poland is the flipped one: white on top!",
@@ -97,8 +102,10 @@ export const PAIR_LESSONS = {
   'gn-sn': "Senegal has the star ⭐ and starts with green. Guinea starts with red and has no star.",
   'au-nz': "Australia has a big extra star ⭐ below the cross. New Zealand's four stars wear red coats with white trim.",
   'lr-us': "Liberia has 11 stripes and a star in a dark blue box. The USA has 50 stars and many more stripes.",
+  'lr-my': "Liberia: one white star on a dark blue corner. Malaysia: a yellow star and crescent 🌙 on blue, with thinner stripes.",
   'my-us': "Malaysia's stripes are 14 thin ones, with a yellow star and crescent on blue.",
   'lu-nl': "Netherlands' blue is deep navy; Luxembourg's is a soft sky blue. Flags differ only in that blue!",
+  'lu-ru': "Luxembourg: red-white-LIGHT blue. Russia: white-blue-red — flipped, with the white band on top!",
   'nl-ru': "Netherlands: red-white-blue horizontal. Russia: white-blue-red — flipped!",
   'co-ec': "Colombia's flag is plain stripes. Ecuador squeezes its coat of arms 🛡️ between the same stripes.",
   'co-ve': "Venezuela adds an arc of stars ⭐ on the blue stripe. Colombia keeps it plain.",
@@ -110,6 +117,8 @@ export const PAIR_LESSONS = {
   'iq-ye': "Iraq has green script on red-white-black; Yemen's tricolor is plain.",
   'sy-ye': "Syria carries two stars ⭐⭐; Yemen is the plain one.",
   'bg-hu': "Hungary: red-white-green horizontal. Bulgaria: white-green-red horizontal. Order is everything!",
+  'bg-ie': "Ireland: vertical green-white-orange. Bulgaria: horizontal white-green-red.",
+  'bg-it': "Italy: vertical green-white-red. Bulgaria: horizontal white-green-red. Same colors, rotated!",
   'hu-ie': "Hungary's stripes are horizontal (red-white-green); Ireland's are vertical (green-white-orange).",
   'hu-it': "Hungary: horizontal red-white-green. Italy: vertical green-white-red. Same colors, different direction!",
   'ie-it': "Both vertical green-white-? — Italy finishes with red 🔴, Ireland with orange 🟠.",
@@ -122,6 +131,16 @@ export const PAIR_LESSONS = {
   'lb-lv': "Latvia: thin white line through dark red. Lebanon: white middle with a green cedar tree.",
   'si-sk': "Both Slavic white-blue-red with shields! Slovakia's shield has a double cross ⚫; Slovenia's shows mountains and 3 stars.",
   'bw-ee': "Estonia: blue-black-white horizontal. Botswana: light blue with a black stripe edged in white.",
+  'dk-fi': "Denmark: white cross on red. Finland: white cross on BLUE.",
+  'dk-is': "Denmark: white cross on red. Iceland: blue field with a red cross trimmed in white.",
+  'dk-no': "Denmark's cross is plain white on red. Norway's cross is red with a white-and-blue border.",
+  'dk-se': "Denmark: white cross on red. Sweden: YELLOW cross on blue.",
+  'fi-is': "Finland: plain white cross on blue. Iceland: red cross with white trim on blue.",
+  'fi-no': "Finland: plain white cross on blue. Norway: red cross wearing white-and-blue borders, on red.",
+  'fi-se': "Both blue fields! Finland's cross is white ❄️, Sweden's cross is yellow 💛.",
+  'is-no': "Both red-white-blue! Iceland: blue field, red cross with white trim. Norway: red field, white-blue trimmed cross.",
+  'is-se': "Both blue fields! Iceland's cross is red with white trim, Sweden's is plain yellow.",
+  'no-se': "Norway: red field with a white-and-blue bordered cross. Sweden: blue field with a plain yellow cross.",
 };
 
 
@@ -217,11 +236,19 @@ export const explainPair = (q, pickedName) => {
   const text = PAIR_LESSONS[pairKey(q.c, pickedCode)];
   if (!text) return null;
   const other = CODE_TO_COUNTRY.get(pickedCode);
+  const others = famA.codes
+    .filter((c) => c !== q.c && c !== pickedCode)
+    .map((c) => {
+      const country = CODE_TO_COUNTRY.get(c);
+      return country ? { code: c, label: country.n } : null;
+    })
+    .filter(Boolean);
   return {
     flags: [
       { code: q.c, label: q.country },
       { code: pickedCode, label: other ? other.n : pickedName },
     ],
+    others,
     family: famA.name,
     text,
   };

@@ -81,6 +81,28 @@ const ex1 = build.explainPair({ c: 'td', country: 'Chad' }, 'Romania');
 check('explain pair chad/romania', ex1 && ex1.flags.length === 2 && ex1.text.length > 20);
 const ex2 = build.explainPair({ c: 'td', country: 'Chad' }, 'Japan');
 check('explain non-family = null', ex2 === null);
+check('explain family includes others[] (nordics)', (() => {
+  const ex = build.explainPair({ c: 'no', country: 'Norway' }, 'Sweden');
+  return ex && ex.others.length === 3 && ex.others.every((o) => o.label && o.code);
+})());
+
+const codeSet = new Set((await import('../games/flags/js/data.js')).COUNTRIES.map((c) => c.c));
+let lessonFails = 0;
+for (const fam of build.FAMILIES) {
+  for (let i = 0; i < fam.codes.length; i++) {
+    for (let j = i + 1; j < fam.codes.length; j++) {
+      const key = [fam.codes[i], fam.codes[j]].sort().join('-');
+      if (!codeSet.has(fam.codes[i]) || !codeSet.has(fam.codes[j])) { console.error(`FAIL - lesson family ${key}: unknown code`); lessonFails++; continue; }
+      if (!build.PAIR_LESSONS[key]) { console.error(`FAIL - missing lesson for pair ${key} (${fam.name})`); lessonFails++; }
+    }
+  }
+}
+const orphanLessons = Object.keys(build.PAIR_LESSONS).filter((k) => {
+  const [a, b] = k.split('-');
+  return !codeSet.has(a) || !codeSet.has(b);
+});
+check(`every family pair has a written lesson (${Object.keys(build.PAIR_LESSONS).length} lessons)`, lessonFails === 0);
+check('no lesson references unknown countries', orphanLessons.length === 0);
 
 const qFull = run({ region: ['World'], count: 250 }, {}, now);
 const td = qFull.find((q) => q.c === 'td');
