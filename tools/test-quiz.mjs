@@ -166,3 +166,22 @@ check('theme: next flips', theme.nextTheme('dark') === 'light' && theme.nextThem
 
 if (failures) { console.error(`\n${failures} test(s) failed`); process.exit(1); }
 console.log('\nquiz logic tests OK');
+
+const { makeSpeaker } = await import('../games/assets/js/pronunciation.js');
+check('pron: no synth = no-crash noop', makeSpeaker(null, null)('France') === false);
+check('pron: speaks with lang + rate', (() => {
+  const spoken = [];
+  const synth = { cancel() {}, speak(u) { spoken.push(u); } };
+  const Ut = class { constructor(t) { this.text = t; } };
+  const say = makeSpeaker(synth, Ut);
+  const okR = say('France');
+  return okR === true && spoken.length === 1 && spoken[0].text === 'France' && spoken[0].lang === 'en-US' && spoken[0].rate === 0.85;
+})());
+check('pron: cancel before each speak', (() => {
+  let cancels = 0;
+  const synth = { cancel() { cancels++; }, speak() {} };
+  const Ut = class { constructor(t) { this.text = t; } };
+  const say = makeSpeaker(synth, Ut);
+  say('Chad'); say('Romania');
+  return cancels === 2;
+})());

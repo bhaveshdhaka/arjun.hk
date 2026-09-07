@@ -181,6 +181,7 @@ kbd {
 .feedback.good { color: var(--good); }
 .feedback.bad { color: var(--bad); }
 .feedback .cont { display: inline-block; margin-left: .3rem; font-size: .78rem; font-weight: 800; color: var(--text-faint); }
+.feedback .chip { margin-bottom: .35rem; }
 .answer .pts {
   position: absolute; right: .8rem; top: 50%; margin-top: -.7em;
   font-weight: 900; color: var(--good); font-size: 1.05rem;

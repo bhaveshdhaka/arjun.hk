@@ -1,6 +1,12 @@
-import { QuizEngine } from '../../assets/js/engine.js?v=09071841';
-import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair, checkTypein, tidbitFor } from './build.js?v=09071841';
-import { REGIONS } from './data.js?v=09071841';
+import { QuizEngine } from '../../assets/js/engine.js?v=09071908';
+import { makeSpeaker } from '../../assets/js/pronunciation.js?v=09071908';
+import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair, checkTypein, tidbitFor } from './build.js?v=09071908';
+import { REGIONS } from './data.js?v=09071908';
+
+const speak = makeSpeaker(
+  typeof speechSynthesis !== 'undefined' ? speechSynthesis : null,
+  typeof SpeechSynthesisUtterance !== 'undefined' ? SpeechSynthesisUtterance : null,
+);
 
 QuizEngine.register({
   id: 'flags',
@@ -46,6 +52,8 @@ QuizEngine.register({
   explain: (q, pickedName) => explainPair(q, pickedName),
 
   tidbit: (q) => tidbitFor(q.c),
+
+  pronounce: (text) => speak(text, 'en-US'),
 
   weakCount: (srs) => Object.values(srs || {}).filter((e) => e && e.attempts && weakness(e) > 0).length,
 

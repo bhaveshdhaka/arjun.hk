@@ -283,11 +283,32 @@ async function s11_theme_toggle_persists() {
 
 const tick = () => new Promise((r) => setImmediate(r));
 
+async function s13_pronunciation_speaks() {
+  const spoken = [];
+  globalThis.speechSynthesis = { cancel() {}, speak(u) { spoken.push(u); } };
+  globalThis.SpeechSynthesisUtterance = class { constructor(t) { this.text = t; this.lang = null; } };
+  const { root } = await bootEngine({ search: '' });
+  dispatch(querySelector(root, '[data-preset="0"]'), 'click');
+  const code = questionCode(root);
+  const correct = COUNTRIES.find((c) => c.c === code).n;
+  clickWrongAnswer(root, code, COUNTRIES);
+  const speakChip = querySelector(root, '[data-speak]');
+  check('pron: speak button rendered on reveal', !!speakChip && speakChip.textContent.includes('🔊'));
+  dispatch(speakChip, 'click');
+  check(`pron: tap speaks the country (${spoken[0] && spoken[0].text})`, spoken.length >= 1 && spoken[0].text === correct && spoken[0].lang === 'en-US');
+  const fb = querySelector(root, '#fb');
+  dispatch(fb, 'click');
+  check('pron: tapping speak never advances the question', !!querySelector(root, '.answer'));
+  delete globalThis.speechSynthesis;
+  delete globalThis.SpeechSynthesisUtterance;
+}
+
+
 const scenarios = [
   s1_intro_fresh, s2_full_session, s3_wrong_tip_and_continue, s4_typein_and_toggle,
   s5_wrong_pin_guest_isolation, s6_correct_pin_sync_and_signout,
   s7_drill_autostart, s8_autostart_preserves_saved_cfg, s9_escape_to_summary,
-  s10_dead_button_inventory, s11_theme_toggle_persists,
+  s10_dead_button_inventory, s11_theme_toggle_persists, s13_pronunciation_speaks,
 ];
 for (const s of scenarios) {
   try { await s(); await tick(); await tick(); } catch (e) { fails.push(s.name); console.error(`FAIL - ${s.name} threw at:`, String(e.stack || e.message).split('\n').slice(1, 5).join(' | ')); }

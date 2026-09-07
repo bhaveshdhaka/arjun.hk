@@ -9,7 +9,19 @@
   <meta name="theme-color" content="#2b2118" media="(prefers-color-scheme: dark)" />
   <title>My Progress — Flags of the World</title>
   <script>(function(){var t=null;try{t=localStorage.getItem('theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}document.documentElement.dataset.theme=t})();</script>
-  <link rel="stylesheet" href="../assets/css/base.css?v=09071841" />
+  <script>
+    window.addEventListener('load', function () {
+      setTimeout(function () {
+        if (!window.__statsLoaded) {
+          var c = document.getElementById('content');
+          if (c && !c.children.length) {
+            c.innerHTML = '<div class="card"><div class="empty">Stats didn\\'t load this time. <button type="button" class="btn" style="margin-top:.6rem" onclick="location.reload()">Retry ↻</button></div></div>';
+          }
+        }
+      }, 2500);
+    });
+  </script>
+  <link rel="stylesheet" href="../assets/css/base.css?v=09071908" />
   <style>
     .bar { height: 1rem; border-radius: 999px; background: var(--bar-track); overflow: hidden; margin: .5rem 0 .3rem; box-shadow: inset 0 2px 6px var(--shadow-soft); }
     .bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--bar-grad-a), var(--bar-grad-b)); }
@@ -43,23 +55,30 @@
     <h1 class="title" style="animation:none">My Progress 🚩</h1>
     <div class="sub" id="profileNote"></div>
     <div id="content"></div>
-    <div class="actions" style="margin-bottom:1rem">
+    <div class="actions" style="margin-bottom:1rem" id="drillCta">
       <a class="btn" href="./?focus=Weak&autostart=1">🔁 Drill my weak flags</a>
     </div>
     <footer>the caterpillar believes in you 🐛</footer>
   </div>
   <script type="module">
-    import { Store } from '../assets/js/store.js?v=09071841';
-    import { cycleTheme } from '../assets/js/theme.js?v=09071841';
-    import { stats, RANK_LABELS, GLOBE, WORLD_COUNT } from '../flags/js/build.js?v=09071841';
-    import { REGIONS, COUNTRIES } from '../flags/js/data.js?v=09071841';
+    import { Store } from '../assets/js/store.js?v=09071908';
+    import { cycleTheme } from '../assets/js/theme.js?v=09071908';
+    import { stats, RANK_LABELS, GLOBE, WORLD_COUNT } from '../flags/js/build.js?v=09071908';
+    import { REGIONS, COUNTRIES } from '../flags/js/data.js?v=09071908';
 
     const codeNames = Object.fromEntries(COUNTRIES.map((c) => [c.c, c.n]));
     const esc = (x) => String(x).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
     const p = Store.profile();
     document.getElementById('who').textContent = `${Store.profileEmoji(p)} ${p}`;
-    const s = Store.load('flags');
+    let s = Store.load('flags');
+    let rescueView = false;
+    if (!Store.syncEnabled() && p !== 'Arjun') {
+      try {
+        const arjun = JSON.parse(localStorage.getItem('games.Arjun.flags'));
+        if (arjun && arjun.totals && arjun.totals.plays > 0) { s = arjun; rescueView = true; }
+      } catch {}
+    }
     const t = s.totals;
     document.getElementById('profileNote').innerHTML = Store.syncEnabled()
       ? '✅ synced across your devices'
@@ -67,9 +86,12 @@
 
     const st = stats(s.srs);
     const el = document.getElementById('content');
+    const rescueBanner = rescueView
+      ? '<div class="card" style="margin-bottom:1.1rem;background:var(--verdict-bg);border:2px solid var(--verdict-border)"><b>📖 Showing Arjun\'s games saved on this device.</b> Sign in from the hub (tap 👑 Arjun) to sync them everywhere.</div>'
+      : '';
 
     if (st.seen === 0) {
-      el.innerHTML = '<div class="card"><div class="empty">Play your first quiz and your progress will appear here! 🌱</div></div>';
+      el.innerHTML = rescueBanner + '<div class="card"><div class="empty">Play your first quiz and your progress will appear here! 🌱</div></div>';
     } else {
       const mastered = st.ranks.sharp + st.ranks.champion;
       const masterPct = Math.round(100 * mastered / WORLD_COUNT);
@@ -119,6 +141,11 @@
     document.addEventListener('click', (e) => {
       if (e.target.closest && e.target.closest('[data-theme-toggle]')) cycleTheme();
     });
+    if (rescueView) {
+      const cta = document.getElementById('drillCta');
+      if (cta) cta.innerHTML = '<a class="btn" href="../">👑 Sign in as Arjun to sync & drill</a>';
+    }
+    window.__statsLoaded = true;
   </script>
 </body>
 </html>

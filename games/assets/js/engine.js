@@ -1,4 +1,4 @@
-import { Store } from './store.js?v=09071841';
+import { Store } from './store.js?v=09071908';
 
 const registry = new Map();
 const ptsFor = (q, ms) => (q && q.type === 'typein' ? 150 : 100) + Math.max(0, 50 - Math.floor(ms / 1000) * 5);
@@ -218,8 +218,11 @@ export const QuizEngine = {
         else if (n === i) b.classList.add('wrong');
       });
       const fb = root.querySelector('#fb');
+      const speakBtn = () => (def.pronounce
+        ? `<button type="button" class="chip sm" data-speak="${esc(q.country)}">🔊 ${esc(q.country)}</button> `
+        : '');
       if (ok) {
-        fb.innerHTML = `${CHEERS[Math.floor(Math.random() * CHEERS.length)]} <span class="cont">tap to continue</span>`;
+        fb.innerHTML = `${speakBtn()}${CHEERS[Math.floor(Math.random() * CHEERS.length)]} <span class="cont">tap to continue</span>`;
         fb.className = 'feedback good';
         const btn = root.querySelector(`[data-opt="${i}"]`);
         if (btn) btn.insertAdjacentHTML('beforeend', `<span class="pts">+${gained}</span>`);
@@ -227,7 +230,7 @@ export const QuizEngine = {
         state.timer = setTimeout(next, 900);
       } else {
         const tip = def.tidbit ? def.tidbit(q) : null;
-        fb.innerHTML = `It was <b>${esc(q.choices[q.answer])}</b> — we'll see it again soon${tip ? `<div class="tip">💡 ${esc(tip)}</div>` : ''}<span class="cont">tap to continue</span>`;
+        fb.innerHTML = `${speakBtn()}It was <b>${esc(q.choices[q.answer])}</b> — we'll see it again soon${tip ? `<div class="tip">💡 ${esc(tip)}</div>` : ''}<span class="cont">tap to continue</span>`;
         fb.className = 'feedback bad';
         state.awaitNext = true;
         if (def.explain) {
@@ -254,15 +257,18 @@ export const QuizEngine = {
       if (inpEl) inpEl.disabled = true;
       if (checkBtn) checkBtn.disabled = true;
       const fb = root.querySelector('#fb');
+      const speakBtn = () => (def.pronounce
+        ? `<button type="button" class="chip sm" data-speak="${esc(q.country)}">🔊 ${esc(q.country)}</button> `
+        : '');
       if (ok) {
-        fb.innerHTML = `${CHEERS[Math.floor(Math.random() * CHEERS.length)]} ${esc(q.country)}! <span class="cont">tap to continue</span>`;
+        fb.innerHTML = `${speakBtn()}${CHEERS[Math.floor(Math.random() * CHEERS.length)]} ${esc(q.country)}! <span class="cont">tap to continue</span>`;
         fb.className = 'feedback good';
         if (checkBtn) checkBtn.insertAdjacentHTML('beforeend', `<span class="pts">+${gained}</span>`);
         state.awaitNext = true;
         state.timer = setTimeout(next, 1000);
       } else {
         const tip = def.tidbit ? def.tidbit(q) : null;
-        fb.innerHTML = `${res.close ? 'So close! ' : ''}It was <b>${esc(q.country)}</b> — we'll see it again soon${tip ? `<div class="tip">💡 ${esc(tip)}</div>` : ''}<span class="cont">tap to continue</span>`;
+        fb.innerHTML = `${speakBtn()}${res.close ? 'So close! ' : ''}It was <b>${esc(q.country)}</b> — we'll see it again soon${tip ? `<div class="tip">💡 ${esc(tip)}</div>` : ''}<span class="cont">tap to continue</span>`;
         fb.className = 'feedback bad';
         state.awaitNext = true;
         if (res.matched && def.explain) {
@@ -283,7 +289,7 @@ export const QuizEngine = {
             ${ex.flags.map((f) => `
               <div class="side">
                 <div class="lflag"><img src="${def.flagSrc ? def.flagSrc(f.code) : ''}" alt="${esc(f.label)}" draggable="false"/></div>
-                <div class="nm">${esc(f.label)}</div>
+                <div class="nm"><button type="button" class="chip sm" data-speak="${esc(f.label)}">🔊 ${esc(f.label)}</button></div>
               </div>`).join('<div class="vs">VS</div>')}
           </div>
           <div class="story">${esc(ex.text)}</div>
@@ -506,6 +512,8 @@ export const QuizEngine = {
         }
         return;
       }
+      const speakBtn2 = e.target.closest('[data-speak]');
+      if (speakBtn2 && def.pronounce) { def.pronounce(speakBtn2.dataset.speak); return; }
       if (state.awaitNext && state.screen === 'play') { next(); return; }
       const opt = e.target.closest('[data-opt]');
       if (opt) answer(Number(opt.dataset.opt));
