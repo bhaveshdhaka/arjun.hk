@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#ffe29a" />
   <title>The Play Room — Games &amp; Quizzes</title>
-  <link rel="stylesheet" href="assets/css/base.css?v=09071221" />
+  <link rel="stylesheet" href="assets/css/base.css?v=09071305" />
   <style>
     .flagrow { display: flex; gap: .55rem; margin: .2rem 0; }
     .flagrow img { width: 3.4rem; height: auto; border-radius: .45rem; box-shadow: 0 3px 8px #00000026; animation: float 3s ease-in-out infinite; }
@@ -16,36 +16,34 @@
     .flagrow img:nth-child(4) { animation-delay: 1.05s; }
     .herotop { display: flex; align-items: center; gap: .8rem; }
     .cardlink { text-decoration: none; color: inherit; display: block; }
-    .pbar { display: flex; gap: .4rem; align-items: center; overflow-x: auto; max-width: 100%; padding-bottom: .2rem; -webkit-overflow-scrolling: touch; }
+    .pbar { display: flex; gap: .4rem; align-items: center; overflow-x: auto; max-width: 70%; padding-bottom: .2rem; -webkit-overflow-scrolling: touch; }
     .pbar::-webkit-scrollbar { display: none; }
-    .pbar .chip { white-space: nowrap; flex-shrink: 0; }
+    .pbar .chip { white-space: nowrap; flex-shrink: 0; font-size: .85rem; padding: .45rem .85rem; }
     .emojigrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin: .7rem 0 1rem; }
     .emojigrid button {
       font-size: 1.7rem; padding: .55rem 0; border-radius: 1rem; border: 3px solid transparent;
       background: #fff; cursor: pointer; font-family: inherit; box-shadow: 0 3px 0 #eadbc8;
     }
     .emojigrid button.on { border-color: #ff5e7e; background: #fff0f5; }
-    .mlink { text-align: center; margin-top: .7rem; }
-    .mlink button { background: none; border: none; color: #5a3a1a99; font-weight: 800; font-size: .85rem; cursor: pointer; text-decoration: underline; font-family: inherit; }
     .prow { display: flex; align-items: center; justify-content: space-between; gap: .6rem; background: #fff; border-radius: 1rem; padding: .6rem .8rem; margin-bottom: .5rem; box-shadow: 0 3px 0 #eadbc8; font-weight: 800; }
     .prow .del { border: none; background: #fde8e8; color: #b34040; border-radius: .7rem; padding: .35rem .7rem; font-weight: 900; cursor: pointer; font-family: inherit; font-size: .85rem; }
     .shake { animation: shakeX .4s ease; }
     @keyframes shakeX { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
     .merr { color: #d04b4b; font-weight: 800; font-size: .9rem; min-height: 1.2rem; margin-bottom: .4rem; text-align: center; }
+    h1.title { margin-top: .4rem; }
+    .sub { margin-bottom: .8rem; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="topbar">
+    <div class="topbar tight">
       <a class="chip" href="../">🏠 arjun.hk</a>
       <div class="pbar" id="profiles"></div>
     </div>
-    <div class="mlink" id="manageLink"></div>
+    <div id="status" style="text-align:center;font-weight:800;min-height:1.4rem;margin:.2rem 0 .5rem;font-size:.9rem"></div>
     <h1 class="title">The Play Room 🎮</h1>
     <div class="sub">Games &amp; quizzes — win dollarbucks!</div>
-    <div class="statrow" id="totals"></div>
-    <div id="syncNote" style="text-align:center;font-weight:800;min-height:1.3rem;margin-bottom:.4rem"></div>
-    <div id="hint" style="text-align:center;font-weight:700;font-size:.85rem;color:#5a3a1a99;margin-bottom:.8rem"></div>
+    <div class="statrow"><span class="chip" id="totals">⏱ 0 min · 💰 0 · 🎮 0</span></div>
     <div class="grid">
       <a class="cardlink" href="flags/">
         <div class="card hero">
@@ -65,7 +63,6 @@
           <div class="meta" id="flagsMeta"></div>
           <div class="herorow">
             <span class="btn">▶ Play</span>
-            <span class="best" id="flagsBest"></span>
           </div>
         </div>
       </a>
@@ -76,10 +73,64 @@
     <footer>the caterpillar is watching you play 🐛</footer>
   </div>
   <script type="module">
-    import { Store, EMOJIS, normalizeName, validNewProfile } from './assets/js/store.js?v=09071221';
+    import { Store, EMOJIS, normalizeName, validNewProfile } from './assets/js/store.js?v=09071305';
 
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const app = document.querySelector('.container');
+
+    const persistentStatus = () => {
+      if (Store.syncEnabled()) return '☁️ Arjun is signed in — stats sync to every device.';
+      try {
+        const legacy = JSON.parse(localStorage.getItem('games.Arjun.flags'));
+        if (Store.profile() === 'Guest' && legacy && legacy.totals && legacy.totals.plays > 0) {
+          return '💾 You have saved games — tap 👑 Arjun and enter your PIN to sync them.';
+        }
+      } catch {}
+      return '';
+    };
+
+    let toastTimer = null;
+    const toast = (msg, ok = true) => {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.style.color = ok ? '#2e8b47' : '#d04b4b';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        el.textContent = persistentStatus();
+        el.style.color = '#5a3a1a99';
+      }, 4000);
+    };
+
+    const renderStatus = () => {
+      const el = document.getElementById('status');
+      el.textContent = persistentStatus();
+      el.style.color = '#5a3a1a99';
+    };
+
+    const renderProfiles = () => {
+      const cur = Store.profile();
+      const synced = Store.syncEnabled();
+      const chips = [
+        `<button type="button" class="chip ${cur === 'Arjun' ? 'on' : 'ghost'}" data-p="Arjun">${synced ? '👑 Arjun ☁️' : '👑 Arjun 🔒'}</button>`,
+        `<button type="button" class="chip ${cur === 'Guest' ? 'on' : 'ghost'}" data-p="Guest">👤 Guest</button>`,
+        ...Store.profiles().map((p) =>
+          `<button type="button" class="chip ${cur === p.name ? 'on' : 'ghost'}" data-p="${esc(p.name)}">${esc(p.emoji)} ${esc(p.name)}</button>`),
+        '<button type="button" class="chip ghost" data-new="1">➕ New</button>',
+      ];
+      if (Store.profiles().length) chips.push('<button type="button" class="chip ghost" data-manage="1">✏️</button>');
+      if (synced) chips.push('<button type="button" class="chip ghost" data-signout="1">Sign out</button>');
+      document.getElementById('profiles').innerHTML = chips.join('');
+    };
+
+    const render = () => {
+      renderProfiles();
+      const s = Store.load('flags').totals;
+      document.getElementById('totals').textContent =
+        `⏱ ${Math.round(s.timeMs / 60000)} min · 💰 ${s.score} · 🎮 ${s.plays}`;
+      document.getElementById('flagsMeta').textContent =
+        s.seen ? `Best score ${s.best} · ${Math.round(100 * s.correct / s.seen)}% correct so far` : '250 flags · smart drills · beat your best';
+      renderStatus();
+    };
 
     const closeModal = () => { const m = app.querySelector('.overlay'); if (m) m.remove(); };
     const openModal = (html) => {
@@ -89,55 +140,6 @@
       ov.innerHTML = `<div class="overlay-card">${html}</div>`;
       app.appendChild(ov);
       return ov;
-    };
-
-    const renderProfiles = () => {
-      const cur = Store.profile();
-      const synced = Store.syncEnabled();
-      const arjunLabel = synced ? '👑 Arjun ☁️' : '👑 Arjun 🔒';
-      const chips = [
-        `<button type="button" class="chip ${cur === 'Arjun' ? 'on' : 'ghost'}" data-p="Arjun">${arjunLabel}</button>`,
-        `<button type="button" class="chip ${cur === 'Guest' ? 'on' : 'ghost'}" data-p="Guest">👤 Guest</button>`,
-        ...Store.profiles().map((p) =>
-          `<button type="button" class="chip ${cur === p.name ? 'on' : 'ghost'}" data-p="${esc(p.name)}">${esc(p.emoji)} ${esc(p.name)}</button>`),
-        '<button type="button" class="chip ghost" data-new="1">➕ New</button>',
-      ];
-      document.getElementById('profiles').innerHTML = chips.join('');
-      const signedIn = cur === 'Arjun' && synced;
-      document.getElementById('manageLink').innerHTML = signedIn
-        ? '<button type="button" data-signout="1">Sign out of Arjun</button>'
-        : (Store.profiles().length ? '<button type="button" data-manage="1">Manage profiles</button>' : '');
-    };
-
-    const render = () => {
-      renderProfiles();
-      const p = Store.profile();
-      const s = Store.load('flags').totals;
-      document.getElementById('totals').innerHTML = `
-        <span class="chip">⏱ ${Math.round(s.timeMs / 60000)} min played</span>
-        <span class="chip">💰 ${s.score} dollarbucks</span>
-        <span class="chip">🎮 ${s.plays} games</span>`;
-      document.getElementById('flagsMeta').textContent =
-        s.seen ? `Best score ${s.best} · ${Math.round(100 * s.correct / s.seen)}% correct so far` : '250 flags · smart drills · beat your best';
-      document.getElementById('flagsBest').textContent = s.best ? `🏆 Best: ${s.best}` : '🚀 First game?';
-      const hint = document.getElementById('hint');
-      if (Store.profile() === 'Guest' && !Store.token() && Store.load('flags').totals.plays === 0) {
-        try {
-          const legacy = JSON.parse(localStorage.getItem('games.Arjun.flags'));
-          if (legacy && legacy.totals && legacy.totals.plays > 0) {
-            hint.innerHTML = '💾 You have saved games — tap <b>👑 Arjun</b> and enter your PIN to sync them.';
-            return;
-          }
-        } catch {}
-      }
-      hint.innerHTML = Store.syncEnabled() ? '☁️ Arjun is signed in — stats sync to every device.' : '';
-    };
-
-    const syncNote = (msg, ok = true) => {
-      const el = document.getElementById('syncNote');
-      el.textContent = msg;
-      el.style.color = ok ? '#2e8b47' : '#d04b4b';
-      setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 4000);
     };
 
     const openCreate = () => {
@@ -172,7 +174,7 @@
         Store.addProfile(name, emoji);
         Store.setProfile(name);
         closeModal();
-        syncNote(`Welcome, ${name}! ${Store.profileEmoji(name)}`);
+        toast(`Welcome, ${name}! ${Store.profileEmoji(name)}`);
         render();
       };
       ov.querySelector('[data-create]').addEventListener('click', create);
@@ -196,9 +198,9 @@
         const er = ov.querySelector('#perr');
         if (!pin) { er.textContent = 'Type the PIN'; return; }
         let ok = false;
-        try { ok = await Store.login(pin); } catch { closeModal(); syncNote('Cloud unreachable — try again later', false); return; }
+        try { ok = await Store.login(pin); } catch { closeModal(); toast('Cloud unreachable — try again later', false); return; }
         if (!ok) {
-          er.textContent = 'Wrong PIN — playing as Guest';
+          er.textContent = 'Wrong PIN — you stay as Guest';
           ov.querySelector('#pin').classList.add('shake');
           setTimeout(() => ov.querySelector('#pin').classList.remove('shake'), 450);
           return;
@@ -207,9 +209,9 @@
         closeModal();
         try {
           await Store.pull('flags');
-          syncNote('☁️ Signed in — stats synced!');
+          toast('☁️ Signed in — stats synced!');
         } catch {
-          syncNote('Signed in (cloud busy — will retry)', false);
+          toast('Signed in (cloud busy — will retry)', false);
         }
         render();
       };
@@ -237,15 +239,21 @@
           return;
         }
         Store.removeProfile(b.dataset.del);
-        const m = ov.querySelector('#mlist');
-        m.innerHTML = list();
+        ov.querySelector('#mlist').innerHTML = list();
         render();
       });
     };
 
     document.getElementById('profiles').addEventListener('click', async (e) => {
-      const newBtn = e.target.closest('[data-new]');
-      if (newBtn) { openCreate(); return; }
+      if (e.target.closest('[data-new]')) { openCreate(); return; }
+      if (e.target.closest('[data-manage]')) { openManage(); return; }
+      if (e.target.closest('[data-signout]')) {
+        Store.setToken('');
+        Store.setProfile('Guest');
+        toast('Signed out — playing as Guest');
+        render();
+        return;
+      }
       const b = e.target.closest('[data-p]');
       if (!b) return;
       const name = b.dataset.p;
@@ -255,18 +263,8 @@
         return;
       }
       Store.setProfile(name);
-      syncNote(`${Store.profileEmoji(name)} Now playing as ${name}`);
+      toast(`${Store.profileEmoji(name)} Now playing as ${name}`);
       render();
-    });
-
-    document.getElementById('manageLink').addEventListener('click', (e) => {
-      if (e.target.closest('[data-manage]')) openManage();
-      if (e.target.closest('[data-signout]')) {
-        Store.setToken('');
-        Store.setProfile('Guest');
-        syncNote('Signed out — playing as Guest');
-        render();
-      }
     });
 
     if (Store.syncEnabled()) Store.pull('flags').then(render).catch(() => {});

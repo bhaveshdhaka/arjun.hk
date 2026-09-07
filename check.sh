@@ -19,7 +19,7 @@ else
     test -s "$f" || { echo "EMPTY page: $f"; exit 1; }
     grep -q "</html>" "$f" || { echo "page does not close: $f"; exit 1; }
     dir=$(dirname "$f")
-    for ref in $(grep -oE '(src|href)="[^"]+"' "$f" | sed -E 's/.*="([^"]+)"/\1/' | grep -vE '^(https?:|//|#|mailto:)' | grep -v '\$\{'); do
+    for ref in $(grep -oE '(src|href)="[^"]+"' "$f" | sed -E 's/.*="([^"]+)"/\1/' | grep -vE '^(https?:|//|#|mailto:)' | grep -v -F '${'); do
       p="${ref%%\?*}"; p="${p%%#*}"
       case "$p" in /*) target=".$p" ;; *) target="$dir/$p" ;; esac
       test -e "$target" || { echo "MISSING asset: $ref (referenced in $f)"; exit 1; }
@@ -27,6 +27,31 @@ else
     echo "page OK: $f"
   done
 fi
+
+# Runtime-generated links inside JS modules: JS renders href/src into pages,
+# so targets must be checked against every page directory (relative context).
+# NOTE: every grep gets `|| true` — an empty match set is normal, not an error.
+for j in $(find games -name '*.js' 2>/dev/null); do
+  refs=$( (grep -oE '(href|src)="[^"]+"' "$j" 2>/dev/null || true) \
+    | (sed -E 's/.*="([^"]+)"/\1/' || true) \
+    | (grep -vE '^(https?:|//|#|mailto:|data:|javascript:)' || true) \
+    | (grep -v -F '${' || true) \
+    | (grep -vE '^(\.\.?/)*\.?/?$' || true) \
+    | sort -u )
+  for ref in $refs; do
+    ok=0
+    for h in index.html $(find games -name '*.html'); do
+      d=$(dirname "$h")
+      case "$ref" in /*) t=".$ref" ;; *) t="$d/$ref" ;; esac
+      t="${t%%\?*}"; t="${t%%#*}"
+      if [ -e "$t" ]; then ok=1; break; fi
+    done
+    if [ "$ok" != "1" ]; then
+      echo "MISSING runtime link: $ref (generated in $j)"; exit 1
+    fi
+  done
+done
+echo "runtime link check OK"
 
 # Data integrity: countries <-> flag files, duplicates, regions
 if command -v node >/dev/null 2>&1; then

@@ -1,6 +1,6 @@
-import { QuizEngine } from '../../assets/js/engine.js?v=09071221';
-import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair, checkTypein, tidbitFor } from './build.js?v=09071221';
-import { REGIONS } from './data.js?v=09071221';
+import { QuizEngine } from '../../assets/js/engine.js?v=09071305';
+import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair, checkTypein, tidbitFor } from './build.js?v=09071305';
+import { REGIONS } from './data.js?v=09071305';
 
 QuizEngine.register({
   id: 'flags',

@@ -1,4 +1,4 @@
-import { Store } from './store.js?v=09071221';
+import { Store } from './store.js?v=09071305';
 
 const registry = new Map();
 const ptsFor = (q, ms) => (q && q.type === 'typein' ? 150 : 100) + Math.max(0, 50 - Math.floor(ms / 1000) * 5);
@@ -402,7 +402,7 @@ export const QuizEngine = {
             ${def.describe ? `<div class="verdict ${d.warn ? 'warn' : ''}" id="verdict">${d.text}</div>` : ''}
             <div class="actions">
               <button class="btn" data-act="start">▶ Start</button>
-              <a class="btn alt" href="stats/">📊 See my progress</a>
+              <a class="btn alt" href="stats.html">📊 See my progress</a>
             </div>
           </div>
           ${KEYBAR}`;
@@ -441,7 +441,7 @@ export const QuizEngine = {
               })()}
               <button class="btn" data-act="start">▶ Play again</button>
               <div class="row">
-                <a class="btn alt" href="stats/">📊 Progress</a>
+                <a class="btn alt" href="stats.html">📊 Progress</a>
                 <button class="btn alt" data-act="intro">⚙️ Change setup</button>
               </div>
             </div>
