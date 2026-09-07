@@ -104,8 +104,7 @@ const orphanLessons = Object.keys(build.PAIR_LESSONS).filter((k) => {
 check(`every family pair has a written lesson (${Object.keys(build.PAIR_LESSONS).length} lessons)`, lessonFails === 0);
 check('no lesson references unknown countries', orphanLessons.length === 0);
 
-const { TIDBITS } = await import('../games/flags/js/tidbits.js');
-const badTidbits = Object.keys(TIDBITS).filter((k) => !codeSet.has(k));
+const { TIDBITS } = await import('../games/flags/js/tidbits.js');const badTidbits = Object.keys(TIDBITS).filter((k) => !codeSet.has(k));
 const missingTidbits = [...codeSet].filter((c) => !TIDBITS[c]);
 check(`every country has a tidbit (${Object.keys(TIDBITS).length})`, missingTidbits.length === 0 && badTidbits.length === 0);
 const famNoTidbit = build.FAMILIES.flatMap((f) => f.codes).filter((c) => !TIDBITS[c]);
@@ -148,3 +147,11 @@ check('buildQuestions honors mode', run({ region: ['World'], count: 5, mode: 'ty
 
 if (failures) { console.error(`\n${failures} test(s) failed`); process.exit(1); }
 console.log('\nquiz logic tests OK');
+
+const { validNewProfile, normalizeName } = await import('../games/assets/js/store.js');
+check('profile: empty name rejected', validNewProfile('   ') !== null);
+check('profile: arjun reserved (any case)', validNewProfile('ARJUN') !== null && validNewProfile('arjun ') !== null);
+check('profile: guest reserved', validNewProfile('Guest') !== null);
+check('profile: duplicate blocked', validNewProfile('mia', ['Mia']) !== null);
+check('profile: valid name passes', validNewProfile('Mia') === null);
+check('profile: names normalized + capped at 12', normalizeName('  Mia   Bell  ') === 'Mia Bell' && normalizeName('abcdefghijklmno').length === 12);
