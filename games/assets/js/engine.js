@@ -1,4 +1,5 @@
-import { Store } from './store.js?v=09072315';
+import { Store } from './store.js?v=09072331';
+import { toggleTheme } from './theme.js?v=09072331';
 
 const registry = new Map();
 const ptsFor = (q, ms) => (q && q.type === 'typein' ? 150 : 100) + Math.max(0, 50 - Math.floor(ms / 1000) * 5);
@@ -92,6 +93,8 @@ export const QuizEngine = {
       el.classList.toggle('warn', !!d.warn);
     };
 
+    const themeGlyph = () => ((root.ownerDocument || document).documentElement.dataset.theme || 'light') === 'dark' ? '☀️' : '🌙';
+
     const render = () => screens[state.screen]();
 
     const dots = () => state.qs.map((_, i) => {
@@ -110,7 +113,7 @@ export const QuizEngine = {
         <button class="chip sm" data-act="quit">${state.quitArm ? 'sure?' : '✕'}</button>
         ${progress}
         <span style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
-          <button class="chip sm" data-theme-toggle aria-label="Toggle light/dark theme" title="Light / dark">🌓</button>
+          <button class="chip sm" data-theme-toggle aria-label="Toggle light/dark theme" title="Light / dark">${themeGlyph()}</button>
           ${state.streak >= 2 ? `<span class="chip sm">🔥 ${state.streak}</span>` : ''}
           <span class="chip sm">⭐ ${state.score}</span>
         </span>
@@ -390,7 +393,7 @@ export const QuizEngine = {
         const d = describeHtml();
         root.innerHTML = `
           <div class="topbar">
-            <a class="chip" href="../">🏠 Play Room</a><button class="chip" data-theme-toggle aria-label="Toggle light/dark theme" title="Light / dark">🌓</button>
+            <a class="chip" href="../">🏠 Play Room</a><button class="chip" data-theme-toggle aria-label="Toggle light/dark theme" title="Light / dark">${themeGlyph()}</button>
             <span class="chip">${Store.profileEmoji(Store.profile())} ${esc(Store.profile())}</span>
           </div>
           <h1 class="title" style="animation:none">${def.emoji} ${esc(def.title)}</h1>
@@ -425,7 +428,7 @@ export const QuizEngine = {
         const acc = Math.round(100 * state.correct / state.results.length);
         root.innerHTML = `
           <div class="topbar">
-            <a class="chip" href="../">🏠 Play Room</a><button class="chip" data-theme-toggle aria-label="Toggle light/dark theme" title="Light / dark">🌓</button>
+            <a class="chip" href="../">🏠 Play Room</a><button class="chip" data-theme-toggle aria-label="Toggle light/dark theme" title="Light / dark">${themeGlyph()}</button>
             <span class="chip">${Store.profileEmoji(Store.profile())} ${esc(Store.profile())}</span>
           </div>
           <div class="card" style="margin-bottom:1.2rem">
@@ -458,6 +461,7 @@ export const QuizEngine = {
     };
 
     root.addEventListener('click', (e) => {
+      if (e.target.closest('[data-theme-toggle]')) { toggleTheme(); return; }
       const stepBtn = e.target.closest('[data-step]');
       if (stepBtn) {
         const c = def.config.find((x) => x.key === stepBtn.dataset.numkey);

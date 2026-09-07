@@ -18,6 +18,17 @@ export const cycleTheme = nextTheme;
 
 export const THEME_COLORS = { light: '#ffe29a', dark: '#2b2118' };
 
+export function toggleTheme(doc = document) {
+  const cur = doc.documentElement.dataset.theme || initialTheme();
+  const nx = nextTheme(cur);
+  applyTheme(nx, doc);
+  doc.querySelectorAll('[data-theme-toggle]').forEach((b) => {
+    b.textContent = nx === 'dark' ? '☀️' : '🌙';
+    b.setAttribute('aria-label', nx === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+  });
+  return nx;
+}
+
 export function applyTheme(theme, doc = document) {
   doc.documentElement.dataset.theme = theme;
   try { localStorage.setItem(THEME_KEY, theme); } catch {}

@@ -1,24 +1,12 @@
-import { QuizEngine } from '../../assets/js/engine.js?v=09072315';
-import { makeSpeaker } from '../../assets/js/pronunciation.js?v=09072315';
-import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair, checkTypein, tidbitFor } from './build.js?v=09072315';
-import { REGIONS } from './data.js?v=09072315';
+import { QuizEngine } from '../../assets/js/engine.js?v=09072331';
+import { makeSpeaker } from '../../assets/js/pronunciation.js?v=09072331';
+import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair, checkTypein, tidbitFor } from './build.js?v=09072331';
+import { REGIONS } from './data.js?v=09072331';
 
-const speak = (() => {
-  try {
-    const synth = typeof speechSynthesis !== 'undefined' ? speechSynthesis : null;
-    const Utterance = typeof SpeechSynthesisUtterance !== 'undefined' ? SpeechSynthesisUtterance : null;
-    if (!speechSynthesis || typeof SpeechSynthesisUtterance !== 'function') return () => false;
-    return (text, lang = 'en-US') => {
-      try {
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(String(text));
-        u.lang = 'en-US';
-        u.rate = 0.85;
-        speechSynthesis.speak(u);
-        return true;
-      } catch { return false; }
-    };
-  })();
+const speak = makeSpeaker(
+  typeof speechSynthesis !== 'undefined' ? speechSynthesis : null,
+  typeof SpeechSynthesisUtterance !== 'undefined' ? SpeechSynthesisUtterance : null,
+);
 
 QuizEngine.register({
   id: 'flags',
@@ -54,6 +42,16 @@ QuizEngine.register({
   preload(q) {
     new Image().src = `img/${q.c}.svg`;
   },
+
+  flagSrc: (code) => `img/${code}.svg`,
+
+  updateSrs: (entry, ok, ms, now) => applyResult(entry, ok, ms, now),
+
+  checkTypein,
+
+  explain: (q, pickedName) => explainPair(q, pickedName),
+
+  tidbit: (q) => tidbitFor(q.c),
 
   pronounce: (text) => speak(text, 'en-US'),
 

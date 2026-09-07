@@ -148,15 +148,20 @@ async function s2_full_session() {
   check('summary reached', root.textContent.includes('Session complete'));
   const saved = JSON.parse(store.getItem('games.Guest.flags'));
   check('session recorded under Guest', saved.totals.plays === 1 && saved.totals.seen === 10);
+  check('full session: SRS entry per flag (updateSrs wired)', Object.keys(saved.srs).length === 10);
 }
 async function s3_wrong_tip_and_continue() {
-  const { root } = await bootEngine({ search: '' });
+  const { root, store } = await bootEngine({ search: '' });
   dispatch(querySelector(root, '[data-preset="0"]'), 'click');
   const code = questionCode(root);
   clickWrongAnswer(root, code, COUNTRIES);
   const fb = querySelector(root, '#fb');
   check('wrong answer shows correction', fb.textContent.includes('It was'));
   check('wrong answer shows tidbit card', !!querySelector(root, '#fb .tip'));
+  {
+    const st = JSON.parse(store.getItem('games.Guest.flags'));
+    check('wrong answer records SRS box 0', st.srs && Object.values(st.srs)[0] && Object.values(st.srs)[0].box === 0);
+  }
   check('miss recorded in dots', querySelectorAll(root, '.d.miss').length === 1);
   dispatch(fb, 'click');
   check('tap-to-continue advances', querySelectorAll(root, '.d.miss').length === 1 && !!querySelector(root, '.answer'));
@@ -252,7 +257,7 @@ function s10_dead_button_inventory() {
   const hubSrc = src('games/index.html');
   const emitted = new Set();
   for (const srcText of [engineSrc, hubSrc]) {
-    for (const m of srcText.matchAll(/data-([a-z-]+)=/g)) emitted.add(m[1]);
+    for (const m of srcText.matchAll(/data-([a-z-]+)(?==|[\s>"'])/g)) emitted.add(m[1]);
   }
   const handled = new Set();
   for (const srcText of [engineSrc, hubSrc]) {
@@ -307,11 +312,43 @@ async function s13_pronunciation_speaks() {
 }
 
 
+async function s15_quiz_typein_correct_scores() {
+  const { root, store, timers } = await bootEngine({ search: '' });
+  const modeSel = querySelectorAll(root, 'select.cfg').find((s) => s.attrs['data-key'] === 'mode');
+  modeSel.value = 'typein';
+  dispatch(querySelector(root, '[data-act="start"]'), 'click');
+  const code = questionCode(root);
+  const name = COUNTRIES.find((c) => c.c === code).n;
+  const inp = querySelector(root, '[data-typein]');
+  inp.value = name;
+  dispatch(querySelector(root, '[data-check]'), 'click');
+  check('type-in: exact answer graded good', querySelector(root, '#fb').className.includes('good'));
+  check('type-in: points shown', !!querySelector(root, '.pts'));
+  const after = JSON.parse(store.getItem('games.Guest.flags'));
+  check('type-in: correct answer moves SRS to box 1', after.srs[`flag:${code}`] && after.srs[`flag:${code}`].box === 1);
+  timers.flush();
+}
+
+async function s16_theme_toggle_on_quiz() {
+  const { root, doc, store } = await bootEngine({ search: '' });
+  const btn = querySelector(root, '[data-theme-toggle]');
+  check('quiz theme: toggle chip on intro topbar', !!btn);
+  const before = doc.documentElement.dataset.theme;
+  dispatch(btn, 'click');
+  const after = doc.documentElement.dataset.theme;
+  check(`quiz theme: tap flips (${String(before)} -> ${after})`, after !== before && (after === 'dark' || after === 'light'));
+  check('quiz theme: choice persisted', store.getItem('theme') === after);
+  check('quiz theme: glyph relabeled', btn.textContent === (after === 'dark' ? '☀️' : '🌙'));
+  dispatch(btn, 'click');
+  check('quiz theme: second tap flips back', doc.documentElement.dataset.theme === before);
+}
+
 const scenarios = [
   s1_intro_fresh, s2_full_session, s3_wrong_tip_and_continue, s4_typein_and_toggle,
   s5_wrong_pin_guest_isolation, s6_correct_pin_sync_and_signout,
   s7_drill_autostart, s8_autostart_preserves_saved_cfg, s9_escape_to_summary,
   s10_dead_button_inventory, s11_theme_toggle_persists, s13_pronunciation_speaks,
+  s15_quiz_typein_correct_scores, s16_theme_toggle_on_quiz,
 ];
 for (const s of scenarios) {
   try { await s(); await tick(); await tick(); } catch (e) { fails.push(s.name); console.error(`FAIL - ${s.name} threw at:`, String(e.stack || e.message).split('\n').slice(1, 5).join(' | ')); }
