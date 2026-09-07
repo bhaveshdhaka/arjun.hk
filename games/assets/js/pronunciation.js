@@ -5,8 +5,8 @@ export function makeSpeaker(synth, utteranceCtor) {
   return (text, lang = 'en-US') => {
     try {
       synth.cancel();
-      const u = new utteranceCtor(String(text));
-      u.lang = lang;
+      const u = new SpeechSynthesisUtterance(String(text));
+      u.lang = 'en-US';
       u.rate = 0.85;
       synth.speak(u);
       return true;

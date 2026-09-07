@@ -24,7 +24,7 @@ const recompute = (s) => {
 };
 
 const mergeStates = (local, remote) => {
-  const out = emptyState();
+  const out = { totals: { plays: 0, correct: 0, seen: 0, timeMs: 0, score: 0, best: 0 }, sessions: [], srs: {} };
   const srsKeys = new Set([...Object.keys(local.srs || {}), ...Object.keys(remote.srs || {})]);
   for (const k of srsKeys) {
     const a = local.srs[k];
@@ -35,40 +35,46 @@ const mergeStates = (local, remote) => {
   const seen = new Set();
   out.sessions = [...(local.sessions || []), ...(remote.sessions || [])]
     .filter((ses) => (seen.has(sig(ses)) ? false : (seen.add(sig(ses)), true)))
-    .sort((a, b) => (a.at < b.at ? -1 : 1));
+    .sort((a, b) => a.at < b.at ? -1 : 1);
   out.sessions = out.sessions.slice(-500);
   return recompute(out);
+}
+
+const safeGet = (key) => {
+  try { return localStorage.getItem(key); } catch { return null; }
 };
+const safeSet = (key, value) => { try { localStorage.setItem(key, value); } catch {} };
+const safeRemove = (key) => { try { localStorage.removeItem(key); } catch {} };
+const safeParse = (key) => { try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; } };
+const safeParseArray = (key) => { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : []; } catch { return []; } };
 
 export const RESERVED = new Set(['arjun', 'guest']);
 export const EMOJIS = ['🦊', '🐼', '🦁', '🐸', '🐵', '🦄', '🐯', '🐨', '🐙', '🦖', '🐳', '⭐'];
-export const normalizeName = (s) => String(s || '').trim().replace(/\s+/g, ' ').slice(0, 12);
+
+const normalizeName = (s) => String(s || '').trim().replace(/\s+/g, ' ').slice(0, 12);
+
 export const validNewProfile = (name, existingNames = []) => {
   const n = normalizeName(name);
   if (!n) return 'Type a name first';
-  if (RESERVED.has(n.toLowerCase())) return 'That name is reserved';
+  if (['arjun', 'guest'].includes(n.toLowerCase())) return 'That name is reserved';
   if (existingNames.some((e) => String(e).toLowerCase() === n.toLowerCase())) return 'That profile already exists';
   return null;
 };
 
 export const Store = {
   profile() {
-    const p = localStorage.getItem('games.profile');
+    const p = safeGet('games.profile');
     if (!p) return 'Guest';
     if (p === 'Arjun' && !this.token()) return 'Guest';
     return p;
   },
   setProfile(p) {
     if (p === 'Arjun' && !this.token()) return;
-    localStorage.setItem('games.profile', p);
+    safeSet('games.profile', p);
   },
-
   profiles() {
-    try {
-      const l = JSON.parse(localStorage.getItem('games.profiles'));
-      if (Array.isArray(l)) return l;
-    } catch {}
-    return [];
+    const stored = localStorage.getItem('games.profiles');
+    try { return JSON.parse(stored || '[]'); } catch { return []; }
   },
   profileEmoji(name) {
     if (name === 'Arjun') return '👑';
@@ -85,26 +91,16 @@ export const Store = {
     return null;
   },
   removeProfile(name) {
-    localStorage.setItem('games.profiles', JSON.stringify(this.profiles().filter((p) => p.name !== name)));
-    const kill = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith(`games.${name}.`)) kill.push(k);
-    }
-    kill.forEach((k) => localStorage.removeItem(k));
+    safeRemove('games.profiles');
+    const list = this.profiles().filter((p) => p.name !== name);
+    localStorage.setItem('games.profiles', JSON.stringify(list));
+    safeRemove(`games.${name}.flags`);
     if (this.profile() === name) this.setProfile('Guest');
   },
 
-  token() {
-    return localStorage.getItem('games.token') || '';
-  },
-  setToken(t) {
-    if (t) localStorage.setItem('games.token', t);
-    else localStorage.removeItem('games.token');
-  },
-  syncEnabled() {
-    return this.profile() === 'Arjun' && !!this.token();
-  },
+  token() { return safeGet('games.token'); },
+  setToken(t) { if (t) safeSet('games.token', t); else safeRemove('games.token'); },
+  syncEnabled() { return this.profile() === 'Arjun' && !!this.token(); },
 
   load(quizId) {
     try {
@@ -112,9 +108,7 @@ export const Store = {
       if (!s.srs) s.srs = {};
       if (!Array.isArray(s.sessions)) s.sessions = [];
       return s;
-    } catch {
-      return emptyState();
-    }
+    } catch { return emptyState(); }
   },
 
   save(quizId, state) {
@@ -144,38 +138,30 @@ export const Store = {
     return s;
   },
 
-  async login(pin) {
-    const res = await fetch(`${API}/v1/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin }),
-    });
-    if (!res.ok) return false;
-    const data = await res.json();
-    this.setToken(data.token);
-    return true;
-  },
-
-  async push(quizId) {
-    const res = await fetch(`${API}/v1/sync`, {
+  push(quizId) {
+    return fetch(`${API}/v1/sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.token()}` },
-      body: JSON.stringify(this.load(quizId)),
-    });
-    if (!res.ok) throw new Error(`sync ${res.status}`);
-    const canonical = await res.json();
-    if (canonical.srs) this.save(quizId, canonical);
-    return canonical;
-  },
-
-  async pull(quizId) {
-    const res = await fetch(`${API}/v1/state`, {
-      headers: { Authorization: `Bearer ${this.token()}` },
-    });
-    if (!res.ok) throw new Error(`pull ${res.status}`);
-    const remote = await res.json();
-    const merged = mergeStates(this.load(quizId), remote);
-    this.save(quizId, merged);
-    return merged;
+      body: JSON.stringify(this.load('flags')),
+    }).then(r => { if (!r.ok) throw new Error(`sync ${r.status}`); return r.json(); })
+      .then(canonical => { if (canonical.srs) this.save('flags', canonical); return canonical; })
+      .catch(() => {});
   },
 };
+
+function safeGet(key) { try { return localStorage.getItem(key); } catch { return null; } }
+function safeSet(key, value) { try { localStorage.setItem(key, value); } catch {} }
+function safeRemove(key) { try { localStorage.removeItem(key); } catch {} }
+function safeParse(key) { try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; }
+function safeParseArray(key) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : []; } catch { return []; } }
+
+export const RESERVED = new Set(['arjun', 'guest']);
+export const EMOJIS = ['🦊', '🐼', '🦁', '🐸', '🐵', '🦄', '🐯', '🐨', '🐙', '🦖', '🐳', '⭐'];
+const normalizeName = (s) => String(s || '').trim().replace(/\s+/g, ' ').slice(0, 12);
+export const validNewProfile = (name, existingNames = []) => {
+  const n = normalizeName(name);
+  if (!n) return 'Type a name first';
+  if (['arjun', 'guest'].includes(n.toLowerCase())) return 'That name is reserved';
+  if (existingNames.some((e) => String(e).toLowerCase() === n.toLowerCase())) return 'That profile already exists';
+  return null;
+}
