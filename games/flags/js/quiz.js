@@ -1,5 +1,5 @@
 import { QuizEngine } from '../../assets/js/engine.js?v=20260907b';
-import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE } from './build.js';
+import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE } from './build.js?v=20260907b';
 import { REGIONS } from './data.js';
 
 QuizEngine.register({
