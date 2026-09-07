@@ -36,11 +36,11 @@
     .mini { background: var(--card); border-radius: 1rem; padding: .55rem; text-align: center; box-shadow: 0 3px 0 var(--answer-shadow), 0 5px 12px var(--shadow-deep); min-width: 0; }
     .mini img { width: 100%; height: auto; border-radius: .35rem; box-shadow: 0 2px 6px var(--shadow-soft); display: block; background: var(--flag-card); }
     .mini .nm { font-weight: 900; margin: .3rem 0 .05rem; font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mini .acc { font-size: .72rem; font-weight: 900; color: var(--accent); }
+    .mini .speak { margin-top: .35rem; border: none; background: var(--card-soft); color: var(--accent); border-radius: .6rem; padding: .2rem .5rem; font-size: .8rem; cursor: pointer; font-family: inherit; }
     .hrow { display: flex; justify-content: space-between; gap: .6rem; background: var(--card); border-radius: 1rem; padding: .6rem .9rem; box-shadow: 0 3px 0 var(--answer-shadow); font-weight: 700; font-size: .9rem; flex-wrap: wrap; margin-bottom: .45rem; }
     .hrow .when { color: var(--text-faint); font-weight: 800; }
     .hrow .res { font-weight: 900; color: var(--accent); }
-    .empty { text-align: center; font-weight: 800; color: var(--text-faint); padding: 1rem 0; }
+    .empty { text-align: center; font-weight: 800; color: var(--text); padding: 1.4rem .9rem; line-height: 1.5; font-size: 1rem; }
   </style>
 </head>
 <body>
@@ -63,6 +63,15 @@
   <script type="module">
     import { Store } from '../assets/js/store.js?v=09071908';
     import { cycleTheme } from '../assets/js/theme.js?v=09071908';
+    import { makeSpeaker } from '../assets/js/pronunciation.js?v=09071908';
+    const speak = makeSpeaker(
+      typeof speechSynthesis !== 'undefined' ? speechSynthesis : null,
+      typeof SpeechSynthesisUtterance !== 'undefined' ? SpeechSynthesisUtterance : null,
+    );
+    document.addEventListener('click', (e) => {
+      const s = e.target.closest && e.target.closest('[data-speak]');
+      if (s && s.dataset.speak) speak(s.dataset.speak, 'en-US');
+    });
     import { stats, RANK_LABELS, GLOBE, WORLD_COUNT } from '../flags/js/build.js?v=09071908';
     import { REGIONS, COUNTRIES } from '../flags/js/data.js?v=09071908';
 
@@ -91,7 +100,10 @@
       : '';
 
     if (st.seen === 0) {
-      el.innerHTML = rescueBanner + '<div class="card"><div class="empty">Play your first quiz and your progress will appear here! 🌱</div></div>';
+      const guestNote = !Store.syncEnabled()
+        ? '<div style="margin-top:.7rem;font-weight:700">You\'re playing as <b>Guest</b> — scores save on this device only.<br/>Sign in as Arjun from the hub to keep them everywhere.</div>'
+        : '';
+      el.innerHTML = rescueBanner + '<div class="card"><div class="empty">No quizzes yet — play your first one and this page fills up! 🌱' + guestNote + '</div></div>';
     } else {
       const mastered = st.ranks.sharp + st.ranks.champion;
       const masterPct = Math.round(100 * mastered / WORLD_COUNT);
@@ -125,6 +137,7 @@
                 <img src="img/${x.code}.svg" alt="" draggable="false"/>
                 <div class="nm">${esc(codeNames[x.code] || x.code.toUpperCase())}</div>
                 <div class="acc">${x.e.correct}/${x.e.attempts} · box ${x.e.box}</div>
+                <button type="button" class="speak" data-speak="${esc(codeNames[x.code] || '')}" aria-label="Hear ${esc(codeNames[x.code] || '')}">🔊</button>
               </div>`).join('')}
           </div>
         </div>` : ''}

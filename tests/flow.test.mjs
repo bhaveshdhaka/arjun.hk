@@ -292,7 +292,10 @@ async function s13_pronunciation_speaks() {
   const code = questionCode(root);
   const correct = COUNTRIES.find((c) => c.c === code).n;
   clickWrongAnswer(root, code, COUNTRIES);
-  const speakChip = querySelector(root, '[data-speak]');
+  // Find the speak button for the CORRECT answer and click it
+  const btns = querySelectorAll(root, '.answer');
+  const correctBtn = btns.find((b) => b.textContent.includes(correct));
+  const speakChip = correctBtn ? correctBtn.querySelector('[data-speak]') : null;
   check('pron: speak button rendered on reveal', !!speakChip && speakChip.textContent.includes('🔊'));
   dispatch(speakChip, 'click');
   check(`pron: tap speaks the country (${spoken[0] && spoken[0].text})`, spoken.length >= 1 && spoken[0].text === correct && spoken[0].lang === 'en-US');

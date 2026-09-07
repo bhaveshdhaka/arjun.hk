@@ -175,7 +175,7 @@ export const QuizEngine = {
       } else {
         area.innerHTML = `
           <div class="answers">${q.choices.map((c, i) =>
-            `<button class="answer" data-opt="${i}"><span class="num">${i + 1}</span> ${esc(c)}</button>`
+            `<div class="answer" role="button" tabindex="0" data-opt="${i}"><span class="num">${i + 1}</span> <span class="aname">${esc(c)}</span><button type="button" class="speak" data-speak="${esc(c)}" aria-label="Hear ${esc(c)}">🔊</button></div>`
           ).join('')}</div>`;
       }
     };
