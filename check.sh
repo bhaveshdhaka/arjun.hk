@@ -36,4 +36,12 @@ else
   echo "node not available — skipped data check"
 fi
 
+# games-api: Go vet + tests (stdlib only, no downloads)
+if command -v go >/dev/null 2>&1; then
+  (cd games-api && go vet ./... >/dev/null && go test ./...)
+  echo "games-api tests OK"
+else
+  echo "go not available — skipped games-api tests"
+fi
+
 echo "static validation OK"

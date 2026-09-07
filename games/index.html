@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#ffe29a" />
   <title>The Play Room — Games &amp; Quizzes</title>
-  <link rel="stylesheet" href="assets/css/base.css?v=09071011" />
+  <link rel="stylesheet" href="assets/css/base.css?v=09071018" />
   <style>
     .flagrow { display: flex; gap: .55rem; margin: .2rem 0; }
     .flagrow img { width: 3.4rem; height: auto; border-radius: .45rem; box-shadow: 0 3px 8px #00000026; animation: float 3s ease-in-out infinite; }
@@ -27,6 +27,7 @@
     <h1 class="title">The Play Room 🎮</h1>
     <div class="sub">Games &amp; quizzes — win dollarbucks!</div>
     <div class="statrow" id="totals"></div>
+    <div id="syncNote" style="text-align:center;font-weight:800;min-height:1.3rem;margin-bottom:.6rem"></div>
     <div class="grid">
       <a class="cardlink" href="flags/">
         <div class="card hero">
@@ -57,12 +58,13 @@
     <footer>the caterpillar is watching you play 🐛</footer>
   </div>
   <script type="module">
-    import { Store } from './assets/js/store.js?v=09071011';
+    import { Store } from './assets/js/store.js?v=09071018';
 
     const render = () => {
       const p = Store.profile();
+      const synced = Store.syncEnabled();
       document.getElementById('profiles').innerHTML = Store.profiles.map((name) =>
-        `<button class="chip ${name === p ? 'on' : 'ghost'}" data-p="${name}">${name === 'Arjun' ? '👑' : '👤'} ${name}</button>`
+        `<button class="chip ${name === p ? 'on' : 'ghost'}" data-p="${name}">${name === 'Arjun' ? '👑' : '👤'} ${name}${name === 'Arjun' && synced ? ' ☁️' : ''}</button>`
       ).join('');
       const s = Store.load('flags').totals;
       document.getElementById('totals').innerHTML = `
@@ -74,11 +76,43 @@
       document.getElementById('flagsBest').textContent = s.best ? `🏆 Best: ${s.best}` : '🚀 First game?';
     };
 
-    document.getElementById('profiles').addEventListener('click', (e) => {
+    const syncNote = (msg, ok = true) => {
+      const el = document.getElementById('syncNote');
+      el.textContent = msg;
+      el.style.color = ok ? '#2e8b47' : '#d04b4b';
+      setTimeout(() => { el.textContent = ''; }, 4000);
+    };
+
+    document.getElementById('profiles').addEventListener('click', async (e) => {
       const b = e.target.closest('[data-p]');
-      if (b) { Store.setProfile(b.dataset.p); render(); }
+      if (!b) return;
+      const name = b.dataset.p;
+      Store.setProfile(name);
+      if (name === 'Arjun' && !Store.token()) {
+        const pin = prompt('Enter Arjun\'s PIN to sync stats:');
+        if (pin) {
+          try {
+            if (await Store.login(pin.trim())) {
+              try {
+                await Store.pull('flags');
+                syncNote('☁️ Signed in — stats synced!');
+              } catch {
+                syncNote('Signed in (cloud unreachable — will retry later)', false);
+              }
+            } else {
+              syncNote('Wrong PIN', false);
+            }
+          } catch {
+            syncNote('Cloud unreachable — playing on this device', false);
+          }
+        }
+      }
+      render();
     });
 
+    if (Store.syncEnabled()) {
+      Store.pull('flags').then(render).catch(() => {});
+    }
     render();
   </script>
 </body>
