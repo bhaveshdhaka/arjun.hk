@@ -31,6 +31,7 @@ fi
 # Data integrity: countries <-> flag files, duplicates, regions
 if command -v node >/dev/null 2>&1; then
   node tools/validate-data.mjs
+  node tools/test-quiz.mjs
 else
   echo "node not available — skipped data check"
 fi

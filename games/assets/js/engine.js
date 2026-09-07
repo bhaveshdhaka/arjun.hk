@@ -15,11 +15,13 @@ const CHEERS = ['Nice! 🎉', 'Correct! ⭐', 'Yes! 💪', 'Great! ✨', 'Nailed
 
 export const QuizEngine = {
   register(def) { registry.set(def.id, def); },
+  get(id) { return registry.get(id); },
 
   run(root, quizId) {
     const def = registry.get(quizId);
     if (!def) { root.innerHTML = '<p>Unknown quiz.</p>'; return; }
 
+    const cfgKey = `games.${quizId}.cfg`;
     const state = {
       screen: 'intro',
       cfg: {},
@@ -35,6 +37,56 @@ export const QuizEngine = {
       timer: null,
     };
     def.config.forEach((c) => { state.cfg[c.key] = c.def; });
+    loadCfg();
+
+    const optVal = (o) => (o.value !== undefined ? o.value : o);
+    const optLabel = (o) => (o.label !== undefined ? o.label : String(o));
+    const clampCount = (c, v) => Math.max(c.min ?? 1, Math.min(c.max ?? 9999, Math.floor(Number(v) || 0) || (c.def ?? 1)));
+
+    function loadCfg() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(cfgKey));
+        if (!saved || typeof saved !== 'object') return;
+        def.config.forEach((c) => {
+          const v = saved[c.key];
+          if (v === undefined) return;
+          if (c.type === 'chips') {
+            const known = c.options.map(optVal);
+            const list = (Array.isArray(v) ? v : []).filter((x) => known.includes(x));
+            if (list.length) state.cfg[c.key] = list;
+          } else if (c.type === 'number') {
+            state.cfg[c.key] = clampCount(c, v);
+          } else {
+            state.cfg[c.key] = v;
+          }
+        });
+      } catch {}
+    }
+
+    const saveCfg = () => { try { localStorage.setItem(cfgKey, JSON.stringify(state.cfg)); } catch {} };
+
+    const syncCountFromInput = () => {
+      const inp = root.querySelector('[data-num]');
+      if (!inp) return;
+      const c = def.config.find((x) => x.key === inp.dataset.num);
+      state.cfg[c.key] = clampCount(c, inp.value.replace(/[^0-9]/g, ''));
+    };
+
+    const describeHtml = () => {
+      if (!def.describe) return '';
+      const d = def.describe(state.cfg);
+      const text = typeof d === 'string' ? d : d.text;
+      const warn = typeof d === 'object' && d.warn;
+      return { text: esc(text), warn };
+    };
+
+    const updateVerdict = () => {
+      const el = root.querySelector('#verdict');
+      if (!el) return;
+      const d = describeHtml();
+      el.textContent = d.text;
+      el.classList.toggle('warn', !!d.warn);
+    };
 
     const render = () => screens[state.screen]();
 
@@ -96,6 +148,11 @@ export const QuizEngine = {
         ).join('')}</div>`;
     };
 
+    const headerSync = () => {
+      const top = root.querySelector('.topbar');
+      if (top) { top.outerHTML = header(); }
+    };
+
     const answer = (i) => {
       if (state.answered) return;
       state.answered = true;
@@ -120,11 +177,6 @@ export const QuizEngine = {
       state.timer = setTimeout(next, ok ? 900 : 1800);
     };
 
-    const headerSync = () => {
-      const top = root.querySelector('.topbar');
-      if (top) { top.outerHTML = header(); }
-    };
-
     const next = () => {
       if (state.timer) { clearTimeout(state.timer); state.timer = null; }
       else return;
@@ -132,29 +184,94 @@ export const QuizEngine = {
       else { state.idx += 1; showQuestion(); }
     };
 
+    const start = () => {
+      def.config.forEach((c) => {
+        if (c.type === 'number') state.cfg[c.key] = clampCount(c, state.cfg[c.key]);
+      });
+      syncCountFromInput();
+      saveCfg();
+      state.qs = def.buildQuestions(state.cfg);
+      if (!state.qs.length) return;
+      state.screen = 'play';
+      state.idx = 0; state.score = 0; state.correct = 0; state.streak = 0;
+      state.results = [];
+      render();
+    };
+
+    const controlHtml = (c) => {
+      if (c.type === 'chips') {
+        const sel = state.cfg[c.key] || [];
+        return `
+          <div class="cfgrow">
+            <label>${esc(c.label)}</label>
+            <div class="chiprow">
+              ${c.options.map((o) => {
+                const v = optVal(o);
+                const on = sel.includes(v);
+                return `<button type="button" class="chip ${on ? 'on' : 'ghost'}" data-chip="${c.key}" data-val="${esc(String(v))}">${esc(optLabel(o))}</button>`;
+              }).join('')}
+            </div>
+          </div>`;
+      }
+      if (c.type === 'number') {
+        return `
+          <div class="cfgrow">
+            <label>${esc(c.label)}</label>
+            <div class="stepper">
+              <button type="button" data-step="-1" data-numkey="${c.key}">−</button>
+              <input class="numfield" data-num="${c.key}" inputmode="numeric" pattern="[0-9]*" value="${Number(state.cfg[c.key])}" aria-label="${esc(c.label)}"/>
+              <button type="button" data-step="1" data-numkey="${c.key}">+</button>
+            </div>
+          </div>`;
+      }
+      return `
+        <div class="cfgrow">
+          <label>${esc(c.label)}</label>
+          <select class="cfg" data-key="${c.key}">
+            ${c.options.map((o) => `<option value="${esc(String(optVal(o)))}" ${String(optVal(o)) === String(state.cfg[c.key]) ? 'selected' : ''}>${esc(optLabel(o))}</option>`).join('')}
+          </select>
+        </div>`;
+    };
+
+    const toggleChip = (c, val) => {
+      const allVal = c.all;
+      let sel = state.cfg[c.key] || [];
+      if (allVal !== undefined && val === String(allVal)) {
+        state.cfg[c.key] = [allVal];
+        return;
+      }
+      let set = new Set(sel.filter((x) => x !== allVal).map(String));
+      if (set.has(val)) set.delete(val);
+      else set.add(val);
+      if (set.size === 0) return;
+      const others = c.options.map(optVal).filter((v) => v !== allVal).map(String);
+      state.cfg[c.key] = set.size === others.length ? [allVal] : [...set];
+    };
+
     const screens = {
       intro: () => {
         const s = Store.load(def.id);
+        const presets = def.presets || [];
+        const d = describeHtml();
         root.innerHTML = `
           <div class="topbar">
             <a class="chip" href="../">🏠 Play Room</a>
             <span class="chip">👑 ${esc(Store.profile())}</span>
           </div>
           <h1 class="title" style="animation:none">${def.emoji} ${esc(def.title)}</h1>
-          <div class="sub">${def.tagline}</div>
+          <div class="sub">${esc(def.tagline)}</div>
           <div class="statrow">
             <span class="chip">🏆 Best: ${s.totals.best}</span>
             <span class="chip">🎮 ${s.totals.plays} played</span>
             <span class="chip">✅ ${s.totals.seen ? Math.round(100 * s.totals.correct / s.totals.seen) : 0}% correct</span>
           </div>
+          ${presets.length ? `
+          <div class="presets">
+            ${presets.map((p, i) => `<button type="button" class="preset" data-preset="${i}"><span class="pl">${esc(p.label)}</span><span class="ps">${esc(p.sub)}</span></button>`).join('')}
+          </div>` : ''}
           <div class="card">
-            ${def.config.map((c) => `
-              <div class="cfgrow">
-                <label for="cfg-${c.key}">${c.label}</label>
-                <select class="cfg" id="cfg-${c.key}" data-key="${c.key}">
-                  ${c.options.map((o) => `<option value="${esc(String(o.value ?? o))}" ${String(o.value ?? o) === String(state.cfg[c.key]) ? 'selected' : ''}>${esc(String(o.label ?? o))}</option>`).join('')}
-                </select>
-              </div>`).join('')}
+            ${def.config.map(controlHtml).join('')}
+            ${def.describe ? `<div class="verdict ${d.warn ? 'warn' : ''}" id="verdict">${d.text}</div>` : ''}
             <div class="actions">
               <button class="btn" data-act="start">▶ Start</button>
             </div>
@@ -200,6 +317,32 @@ export const QuizEngine = {
     };
 
     root.addEventListener('click', (e) => {
+      const stepBtn = e.target.closest('[data-step]');
+      if (stepBtn) {
+        const c = def.config.find((x) => x.key === stepBtn.dataset.numkey);
+        const step = Number(stepBtn.dataset.step) * (Number(state.cfg[c.key]) < 20 ? 1 : 5);
+        state.cfg[c.key] = clampCount(c, Number(state.cfg[c.key]) + step);
+        const inp = root.querySelector(`[data-num="${c.key}"]`);
+        if (inp) inp.value = state.cfg[c.key];
+        saveCfg();
+        updateVerdict();
+        return;
+      }
+      const chipBtn = e.target.closest('[data-chip]');
+      if (chipBtn) {
+        syncCountFromInput();
+        const c = def.config.find((x) => x.key === chipBtn.dataset.chip);
+        toggleChip(c, chipBtn.dataset.val);
+        saveCfg();
+        render();
+        return;
+      }
+      const presetBtn = e.target.closest('[data-preset]');
+      if (presetBtn) {
+        const p = (def.presets || [])[Number(presetBtn.dataset.preset)];
+        if (p) { state.cfg = { ...state.cfg, ...p.cfg }; start(); }
+        return;
+      }
       const act = e.target.closest('[data-act]');
       if (act) {
         const a = act.dataset.act;
@@ -208,12 +351,7 @@ export const QuizEngine = {
             const v = sel.value;
             state.cfg[sel.dataset.key] = Number.isNaN(Number(v)) ? v : Number(v);
           });
-          state.qs = def.buildQuestions(state.cfg);
-          if (!state.qs.length) return;
-          state.screen = 'play';
-          state.idx = 0; state.score = 0; state.correct = 0; state.streak = 0;
-          state.results = [];
-          render();
+          start();
         } else if (a === 'quit') {
           endSession();
         } else if (a === 'intro') {
@@ -224,6 +362,26 @@ export const QuizEngine = {
       }
       const opt = e.target.closest('[data-opt]');
       if (opt) answer(Number(opt.dataset.opt));
+    });
+
+    root.addEventListener('input', (e) => {
+      const inp = e.target.closest('[data-num]');
+      if (inp) {
+        const c = def.config.find((x) => x.key === inp.dataset.num);
+        state.cfg[c.key] = Number(inp.value.replace(/[^0-9]/g, '')) || 0;
+        updateVerdict();
+      }
+    });
+
+    root.addEventListener('change', (e) => {
+      const inp = e.target.closest('[data-num]');
+      if (inp) {
+        const c = def.config.find((x) => x.key === inp.dataset.num);
+        state.cfg[c.key] = clampCount(c, inp.value.replace(/[^0-9]/g, ''));
+        inp.value = state.cfg[c.key];
+        saveCfg();
+        updateVerdict();
+      }
     });
 
     document.addEventListener('keydown', (e) => {
@@ -237,8 +395,8 @@ export const QuizEngine = {
           endSession();
         }
       } else if (state.screen === 'intro' && e.key === 'Enter') {
-        const btn = root.querySelector('[data-act="start"]');
-        if (btn) btn.click();
+        syncCountFromInput();
+        start();
       }
     });
 

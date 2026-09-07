@@ -144,3 +144,39 @@ select.cfg:focus { border-color: #ff5e7e; }
 footer { text-align: center; margin-top: 2rem; font-weight: 700; color: #7c4a2a; opacity: .8; }
 .credit { display: block; text-align: center; margin-top: .8rem; font-size: .78rem; color: #5a3a1a77; font-weight: 700; }
 .credit a { color: inherit; }
+
+.presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: .7rem; margin-bottom: 1.3rem; }
+.preset {
+  display: flex; flex-direction: column; align-items: center; gap: .2rem;
+  background: #ffffffee; border: none; border-radius: 1.4rem; padding: .95rem .5rem;
+  box-shadow: 0 5px 0 #eadbc8, 0 8px 20px #00000014; cursor: pointer; font-family: inherit;
+  transition: transform .15s ease;
+}
+.preset:active { transform: translateY(3px); box-shadow: 0 2px 0 #eadbc8; }
+@media (hover: hover) { .preset:hover { transform: translateY(-2px); } }
+.preset .pl { font-size: 1.05rem; font-weight: 900; color: #5a3a1a; }
+.preset .ps { font-size: .78rem; font-weight: 800; color: #9a6b3f; }
+
+.chiprow { display: flex; flex-wrap: wrap; gap: .5rem; }
+.chiprow .chip { font-size: .9rem; padding: .55rem 1rem; }
+
+.stepper { display: flex; align-items: center; gap: .7rem; }
+.stepper button {
+  width: 3.2rem; height: 3.2rem; border-radius: 1rem; border: none;
+  font-size: 1.7rem; font-weight: 900; color: #5a3a1a; background: #fff;
+  box-shadow: 0 4px 0 #eadbc8; cursor: pointer; font-family: inherit; line-height: 1;
+}
+.stepper button:active { transform: translateY(2px); box-shadow: 0 2px 0 #eadbc8; }
+.numfield {
+  width: 5.5rem; text-align: center; font-size: 1.5rem; font-weight: 900; color: #5a3a1a;
+  border: 3px solid #ffb3c1; border-radius: 1rem; padding: .5rem .2rem; outline: none;
+  font-family: inherit; background: #fff;
+}
+.numfield:focus { border-color: #ff5e7e; box-shadow: 0 0 0 4px #ff5e7e22; }
+
+.verdict {
+  text-align: center; font-weight: 800; color: #7c4a2a; background: #fff8e8;
+  border: 2px solid #ffe29a; border-radius: 1rem; padding: .65rem .8rem;
+  margin: .2rem 0 1rem; font-size: .95rem;
+}
+.verdict.warn { background: #fde8e8; border-color: #f3bcbc; color: #b34040; }
