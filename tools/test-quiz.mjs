@@ -104,6 +104,14 @@ const orphanLessons = Object.keys(build.PAIR_LESSONS).filter((k) => {
 check(`every family pair has a written lesson (${Object.keys(build.PAIR_LESSONS).length} lessons)`, lessonFails === 0);
 check('no lesson references unknown countries', orphanLessons.length === 0);
 
+const { TIDBITS } = await import('../games/flags/js/tidbits.js');
+const badTidbits = Object.keys(TIDBITS).filter((k) => !codeSet.has(k));
+const missingTidbits = [...codeSet].filter((c) => !TIDBITS[c]);
+check(`every country has a tidbit (${Object.keys(TIDBITS).length})`, missingTidbits.length === 0 && badTidbits.length === 0);
+const famNoTidbit = build.FAMILIES.flatMap((f) => f.codes).filter((c) => !TIDBITS[c]);
+check('every lookalike family member has a tidbit', famNoTidbit.length === 0);
+check('tidbitFor works', build.tidbitFor('al').includes('Eagle'));
+
 const qFull = run({ region: ['World'], count: 250 }, {}, now);
 const td = qFull.find((q) => q.c === 'td');
 check('family distractors: Romania always among Chad options', td && td.choices.includes('Romania') && td.choices.includes('Moldova'));

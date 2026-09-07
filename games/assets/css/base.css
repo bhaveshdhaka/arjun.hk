@@ -128,6 +128,11 @@ kbd {
 .feedback.good { color: #2e8b47; }
 .feedback.bad { color: #d04b4b; }
 .feedback .cont { display: inline-block; margin-left: .3rem; font-size: .78rem; font-weight: 800; color: #5a3a1a77; }
+.tip {
+  display: block; margin: .35rem auto 0; max-width: 460px;
+  background: #eaf6ff; border: 2px solid #b2e0ff; border-radius: .9rem;
+  padding: .5rem .7rem; font-size: .85rem; font-weight: 700; color: #2a5a7a; line-height: 1.4;
+}
 .answer .pts {
   position: absolute; right: .8rem; top: 50%; margin-top: -.7em;
   font-weight: 900; color: #2e8b47; font-size: 1.05rem;

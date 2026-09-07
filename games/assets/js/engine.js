@@ -1,4 +1,4 @@
-import { Store } from './store.js?v=09070540';
+import { Store } from './store.js?v=09071011';
 
 const registry = new Map();
 const ptsFor = (q, ms) => (q && q.type === 'typein' ? 150 : 100) + Math.max(0, 50 - Math.floor(ms / 1000) * 5);
@@ -225,7 +225,8 @@ export const QuizEngine = {
         state.awaitNext = true;
         state.timer = setTimeout(next, 900);
       } else {
-        fb.innerHTML = `It was <b>${esc(q.choices[q.answer])}</b> — we'll see it again soon <span class="cont">tap to continue</span>`;
+        const tip = def.tidbit ? def.tidbit(q) : null;
+        fb.innerHTML = `It was <b>${esc(q.choices[q.answer])}</b> — we'll see it again soon${tip ? `<div class="tip">💡 ${esc(tip)}</div>` : ''}<span class="cont">tap to continue</span>`;
         fb.className = 'feedback bad';
         state.awaitNext = true;
         if (def.explain) {
@@ -259,7 +260,8 @@ export const QuizEngine = {
         state.awaitNext = true;
         state.timer = setTimeout(next, 1000);
       } else {
-        fb.innerHTML = `${res.close ? 'So close! ' : ''}It was <b>${esc(q.country)}</b> — we'll see it again soon <span class="cont">tap to continue</span>`;
+        const tip = def.tidbit ? def.tidbit(q) : null;
+        fb.innerHTML = `${res.close ? 'So close! ' : ''}It was <b>${esc(q.country)}</b> — we'll see it again soon${tip ? `<div class="tip">💡 ${esc(tip)}</div>` : ''}<span class="cont">tap to continue</span>`;
         fb.className = 'feedback bad';
         state.awaitNext = true;
         if (res.matched && def.explain) {

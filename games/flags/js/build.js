@@ -1,4 +1,7 @@
 import { COUNTRIES } from './data.js';
+import { TIDBITS } from './tidbits.js';
+
+export const tidbitFor = (code) => TIDBITS[code] || null;
 
 const GLOBE = { Asia: '🌏', Europe: '🌍', Africa: '🌍', Oceania: '🌏', Americas: '🌎', Antarctica: '🐧' };
 const WORLD_COUNT = COUNTRIES.length;
