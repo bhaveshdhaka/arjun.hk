@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#ffe29a" />
   <title>The Play Room — Games &amp; Quizzes</title>
-  <link rel="stylesheet" href="assets/css/base.css?v=09071305" />
+  <link rel="stylesheet" href="assets/css/base.css?v=09071412" />
   <style>
     .flagrow { display: flex; gap: .55rem; margin: .2rem 0; }
     .flagrow img { width: 3.4rem; height: auto; border-radius: .45rem; box-shadow: 0 3px 8px #00000026; animation: float 3s ease-in-out infinite; }
@@ -73,13 +73,13 @@
     <footer>the caterpillar is watching you play 🐛</footer>
   </div>
   <script type="module">
-    import { Store, EMOJIS, normalizeName, validNewProfile } from './assets/js/store.js?v=09071305';
+    import { Store, EMOJIS, normalizeName, validNewProfile } from './assets/js/store.js?v=09071412';
 
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const app = document.querySelector('.container');
 
     const persistentStatus = () => {
-      if (Store.syncEnabled()) return '☁️ Arjun is signed in — stats sync to every device.';
+      if (Store.syncEnabled()) return '✅ Arjun is signed in — stats sync to every device.';
       try {
         const legacy = JSON.parse(localStorage.getItem('games.Arjun.flags'));
         if (Store.profile() === 'Guest' && legacy && legacy.totals && legacy.totals.plays > 0) {
@@ -111,7 +111,7 @@
       const cur = Store.profile();
       const synced = Store.syncEnabled();
       const chips = [
-        `<button type="button" class="chip ${cur === 'Arjun' ? 'on' : 'ghost'}" data-p="Arjun">${synced ? '👑 Arjun ☁️' : '👑 Arjun 🔒'}</button>`,
+        `<button type="button" class="chip ${cur === 'Arjun' ? 'on' : 'ghost'}" data-p="Arjun">${synced ? '👑 Arjun<i class="dot"></i>' : '👑 Arjun 🔒'}</button>`,
         `<button type="button" class="chip ${cur === 'Guest' ? 'on' : 'ghost'}" data-p="Guest">👤 Guest</button>`,
         ...Store.profiles().map((p) =>
           `<button type="button" class="chip ${cur === p.name ? 'on' : 'ghost'}" data-p="${esc(p.name)}">${esc(p.emoji)} ${esc(p.name)}</button>`),
@@ -209,7 +209,7 @@
         closeModal();
         try {
           await Store.pull('flags');
-          toast('☁️ Signed in — stats synced!');
+          toast('Signed in — stats synced ✓');
         } catch {
           toast('Signed in (cloud busy — will retry)', false);
         }

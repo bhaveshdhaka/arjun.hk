@@ -34,6 +34,26 @@ deploy pipeline.
 
 ## Before you ship
 
+Ship protocol — all six gates, in order, every time. "Checked" means this
+list ran; anything outside the list is stated explicitly as unverified.
+
+1. **Logic tests** — `node tools/test-quiz.mjs` (SRS math, quotas, type-in
+   grading, profiles, lessons coverage). Blocks ship on failure.
+2. **Data + link integrity** — `node tools/validate-data.mjs` (countries ↔
+   flags), page scans, **JS-generated `href`/`src` scan** (runtime links are
+   checked against every page dir), banned-glyph check (☁ renders as a blob
+   on iOS chips — use the `.dot` status indicator).
+3. **Headless flow tests** — `node tests/flow.test.mjs`: a DOM stub drives
+   the real engine/hub/store through user paths (wrong-PIN isolation,
+   sign-in merge, drills autostart, type-in toggle, summary, sign-out).
+   These simulate behavior, NOT pixels.
+4. **Dead-button inventory** — part of flow tests: every emitted
+   `data-*`/href must have a handler or existing target.
+5. **Presentation audit** — emoji render-safety, touch-target size, safe
+   areas, spacing; findings written into the handoff, not assumed clean.
+6. **Honest handoff** — every deploy message states: verified by me (X, Y),
+   NOT verifiable by me (Z), and a ≤30s numbered check for Z only.
+
 If anything under `games/` changed, bump the asset cache-bust version
 (Cloudflare caches .js/.css by extension — stale assets otherwise):
 
@@ -47,8 +67,9 @@ Then run the check locally — it's the same command CI runs:
 bash check.sh
 ```
 
-It verifies every page + referenced local asset, country↔flag data
-integrity, and the quiz logic tests. Fix anything that fails first.
+It verifies every page + referenced local asset (including runtime links),
+country↔flag data integrity, the quiz logic tests, and the flow tests.
+Fix anything that fails first.
 
 ## Ship (fleet is the only deploy path)
 

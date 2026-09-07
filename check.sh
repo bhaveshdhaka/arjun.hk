@@ -53,12 +53,19 @@ for j in $(find games -name '*.js' 2>/dev/null); do
 done
 echo "runtime link check OK"
 
+# Presentation ban: the cloud glyph renders as a washed-out blob on iOS chips.
+if grep -rn -F '☁' games/ index.html 2>/dev/null; then
+  echo "FAIL: banned glyph ☁ found — use the .dot status indicator instead"; exit 1
+fi
+echo "glyph check OK"
+
 # Data integrity: countries <-> flag files, duplicates, regions
 if command -v node >/dev/null 2>&1; then
   node tools/validate-data.mjs
   node tools/test-quiz.mjs
+  node tests/flow.test.mjs
 else
-  echo "node not available — skipped data check"
+  echo "node not available — skipped data + flow checks"
 fi
 
 # games-api: Go vet + tests (stdlib only, no downloads)

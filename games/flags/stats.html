@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#ffe29a" />
   <title>My Progress — Flags of the World</title>
-  <link rel="stylesheet" href="../assets/css/base.css?v=09071305" />
+  <link rel="stylesheet" href="../assets/css/base.css?v=09071412" />
   <style>
     .bar { height: 1rem; border-radius: 999px; background: #ffffffaa; overflow: hidden; margin: .5rem 0 .3rem; box-shadow: inset 0 2px 6px #00000012; }
     .bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #ffb35e, #ff5e7e); }
@@ -39,14 +39,14 @@
     <div class="sub" id="profileNote"></div>
     <div id="content"></div>
     <div class="actions" style="margin-bottom:1rem">
-      <a class="btn" href="./?focus=Weak">🔁 Drill my weak flags</a>
+      <a class="btn" href="./?focus=Weak&autostart=1">🔁 Drill my weak flags</a>
     </div>
     <footer>the caterpillar believes in you 🐛</footer>
   </div>
   <script type="module">
-    import { Store } from '../assets/js/store.js?v=09071305';
-    import { stats, RANK_LABELS, GLOBE, WORLD_COUNT } from '../flags/js/build.js?v=09071305';
-    import { REGIONS, COUNTRIES } from '../flags/js/data.js?v=09071305';
+    import { Store } from '../assets/js/store.js?v=09071412';
+    import { stats, RANK_LABELS, GLOBE, WORLD_COUNT } from '../flags/js/build.js?v=09071412';
+    import { REGIONS, COUNTRIES } from '../flags/js/data.js?v=09071412';
 
     const codeNames = Object.fromEntries(COUNTRIES.map((c) => [c.c, c.n]));
     const esc = (x) => String(x).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -55,8 +55,8 @@
     document.getElementById('who').textContent = `${Store.profileEmoji(p)} ${p}`;
     const s = Store.load('flags');
     const t = s.totals;
-    document.getElementById('profileNote').textContent = Store.syncEnabled()
-      ? '☁️ synced across your devices'
+    document.getElementById('profileNote').innerHTML = Store.syncEnabled()
+      ? '<i class="dot"></i> synced across your devices'
       : 'on this device only';
 
     const st = stats(s.srs);

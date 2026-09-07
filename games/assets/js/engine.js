@@ -1,4 +1,4 @@
-import { Store } from './store.js?v=09071305';
+import { Store } from './store.js?v=09071412';
 
 const registry = new Map();
 const ptsFor = (q, ms) => (q && q.type === 'typein' ? 150 : 100) + Math.max(0, 50 - Math.floor(ms / 1000) * 5);
@@ -312,12 +312,12 @@ export const QuizEngine = {
       state.moving = false;
     };
 
-    const start = () => {
+    const start = (persist = true) => {
       def.config.forEach((c) => {
         if (c.type === 'number') state.cfg[c.key] = clampCount(c, state.cfg[c.key]);
       });
       syncCountFromInput();
-      saveCfg();
+      if (persist) saveCfg();
       state.qs = def.buildQuestions(state.cfg, Store.load(def.id).srs);
       if (!state.qs.length) return;
       state.screen = 'play';
@@ -384,7 +384,7 @@ export const QuizEngine = {
         root.innerHTML = `
           <div class="topbar">
             <a class="chip" href="../">🏠 Play Room</a>
-            <span class="chip">${Store.profileEmoji(Store.profile())} ${esc(Store.profile())}${Store.syncEnabled() ? " ☁️" : ""}</span>
+            <span class="chip">${Store.profileEmoji(Store.profile())} ${esc(Store.profile())}${Store.syncEnabled() ? ' <i class="dot"></i>' : ""}</span>
           </div>
           <h1 class="title" style="animation:none">${def.emoji} ${esc(def.title)}</h1>
           <div class="sub">${esc(def.tagline)}</div>
@@ -419,7 +419,7 @@ export const QuizEngine = {
         root.innerHTML = `
           <div class="topbar">
             <a class="chip" href="../">🏠 Play Room</a>
-            <span class="chip">${Store.profileEmoji(Store.profile())} ${esc(Store.profile())}${Store.syncEnabled() ? " ☁️" : ""}</span>
+            <span class="chip">${Store.profileEmoji(Store.profile())} ${esc(Store.profile())}${Store.syncEnabled() ? ' <i class="dot"></i>' : ""}</span>
           </div>
           <div class="card" style="margin-bottom:1.2rem">
             <h1 class="title" style="animation:none;font-size:clamp(1.8rem,8vw,2.6rem)">Session complete! 🎉</h1>
@@ -560,6 +560,7 @@ export const QuizEngine = {
       }
     });
 
-    render();
+    if (opts.autostart) start(false);
+    else render();
   },
 };

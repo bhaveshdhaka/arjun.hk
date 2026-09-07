@@ -1,6 +1,6 @@
-import { QuizEngine } from '../../assets/js/engine.js?v=09071305';
-import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair, checkTypein, tidbitFor } from './build.js?v=09071305';
-import { REGIONS } from './data.js?v=09071305';
+import { QuizEngine } from '../../assets/js/engine.js?v=09071412';
+import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair, checkTypein, tidbitFor } from './build.js?v=09071412';
+import { REGIONS } from './data.js?v=09071412';
 
 QuizEngine.register({
   id: 'flags',
@@ -53,7 +53,8 @@ QuizEngine.register({
 });
 
 if (typeof document !== 'undefined' && document.getElementById('app')) {
-  const focus = new URLSearchParams(location.search).get('focus');
+  const params = new URLSearchParams(location.search);
+  const focus = params.get('focus');
   const cfg = focus === 'Weak' || focus === 'New' ? { focus } : undefined;
-  QuizEngine.run(document.getElementById('app'), 'flags', { cfg });
+  QuizEngine.run(document.getElementById('app'), 'flags', { cfg, autostart: params.get('autostart') === '1' });
 }

@@ -199,6 +199,11 @@ footer { text-align: center; margin-top: 2rem; font-weight: 700; color: #7c4a2a;
 }
 .verdict.warn { background: #fde8e8; border-color: #f3bcbc; color: #b34040; }
 
+.dot {
+  display: inline-block; width: .55rem; height: .55rem; border-radius: 50%;
+  background: #2e8b47; margin-left: .3rem; box-shadow: 0 0 0 3px #2e8b4722;
+}
+
 .overlay {
   position: fixed; inset: 0; z-index: 50;
   background: #5a3a1a55; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
