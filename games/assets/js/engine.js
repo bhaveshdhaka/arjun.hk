@@ -1,4 +1,4 @@
-import { Store } from './store.js?v=20260907b';
+import { Store } from './store.js?v=1e2760d';
 
 const registry = new Map();
 const pts = (ms) => 100 + Math.max(0, 50 - Math.floor(ms / 1000) * 5);

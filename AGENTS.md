@@ -1,14 +1,15 @@
 # arjun.hk
 
-Static single-page site (one `index.html` + assets, served by `nginx:alpine`).
+Static site (`index.html` + `games/` section, served by `nginx:alpine`).
 Single branch `main`. Deploys are **fleet-managed** (k3s on `hk-03-dev`,
-service `arjun-hk`, host `arjun.hk`). There is no Coolify, no ghcr deploy
-path, and no webhook — the GitHub CI workflow runs `check.sh` only; it is a
-lint gate, not the deploy pipeline.
+service `arjun-hk`, host `arjun.hk`, multiple sites → pass `--site hk-03-dev`
+to fleet ops). There is no Coolify, no ghcr deploy path, and no webhook —
+the GitHub CI workflow runs `check.sh` only; it is a lint gate, not the
+deploy pipeline.
 
 ## Site structure
 
-- `index.html` — the entire page: inline CSS, no JS, no external assets.
+- `index.html` — restaurant menu page: inline CSS, no JS, no external assets.
   - Header: "Baby Boy's Restaurant" + "Now Open!" badge
   - Menu grid: 5 cards (Cheese, Matcha, Bagel, Cream, Ice-Cream), priced in
     "dollarbucks"
@@ -16,22 +17,38 @@ lint gate, not the deploy pipeline.
     waves), Octopus (HK octopus-card swirl), Visa (wordmark), Mastercard
     (overlapping circles). Icons are inline SVG on purpose — adding images/
     files means check.sh validates them, and the page stays self-contained.
-  - Footer: caterpillar 🐛
-- `images/` — menu card art only (every `src=` ref is validated by check.sh)
-- `check.sh` — static validation, same script CI runs
+  - "Play Room" link chip + caterpillar footer 🐛
+- `games/` — quiz section (vanilla ES modules, no build system):
+  - `games/index.html` — Play Room hub (Arjun/Guest profile, totals)
+  - `games/flags/` — Flags of the World quiz; `js/build.js` = pure logic
+    (node-testable), `js/quiz.js` = browser wiring, `img/*.svg` = 250 flags
+    from flagcdn (flagpedia)
+  - `games/assets/js/engine.js` — reusable quiz engine (presets, chips,
+    number stepper, session/scoring/keyboard); `store.js` = localStorage
+    profiles/stats
+- `tools/` — `validate-data.mjs` (countries ↔ flags integrity),
+  `test-quiz.mjs` (quiz logic), `bump-assets.sh` (cache-bust versioning)
+- `check.sh` — static validation + data + quiz tests, same script CI runs
 - `.github/workflows/ci.yml` — push gate: runs check.sh on main. Nothing
   else (the old GHCR build + Coolify trigger was removed; it was dead).
 
 ## Before you ship
 
-Run the check locally — it's the same command CI runs:
+If anything under `games/` changed, bump the asset cache-bust version
+(Cloudflare caches .js/.css by extension — stale assets otherwise):
+
+```bash
+bash tools/bump-assets.sh
+```
+
+Then run the check locally — it's the same command CI runs:
 
 ```bash
 bash check.sh
 ```
 
-It verifies `index.html` is present + well-formed and that every referenced
-local asset exists. Fix anything that fails first.
+It verifies every page + referenced local asset, country↔flag data
+integrity, and the quiz logic tests. Fix anything that fails first.
 
 ## Ship (fleet is the only deploy path)
 
