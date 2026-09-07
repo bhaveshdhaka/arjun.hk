@@ -14,6 +14,8 @@ export function nextTheme(current) {
   return current === 'dark' ? 'light' : 'dark';
 }
 
+export const cycleTheme = nextTheme;
+
 export const THEME_COLORS = { light: '#ffe29a', dark: '#2b2118' };
 
 export function applyTheme(theme, doc = document) {
