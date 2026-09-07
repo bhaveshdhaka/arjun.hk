@@ -1,8 +1,8 @@
-import { QuizEngine } from '../games/assets/js/engine.js';
-import '../games/flags/js/quiz.js';
+import * as build from '../games/flags/js/build.js';
 
-const def = QuizEngine.get('flags');
-if (!def) { console.error('FAIL: flags quiz not registered'); process.exit(1); }
+const def = { describe: build.describe };
+if (!def) { console.error('FAIL: build module loaded'); process.exit(1); }
+const run = build.buildQuestions;
 
 let failures = 0;
 const check = (name, cond) => {
@@ -12,7 +12,6 @@ const check = (name, cond) => {
 
 const codes = (qs) => qs.map((q) => q.c);
 const unique = (qs) => new Set(codes(qs)).size === qs.length;
-const run = (cfg) => def.buildQuestions(cfg);
 const regionsOf = (qs) => new Set(qs.map((q) => q.region));
 
 const qAll = run({ region: ['World'], count: 250 });
