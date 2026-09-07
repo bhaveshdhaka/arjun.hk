@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 V=$(date +%m%d%H%M)
-files="games/index.html games/flags/index.html games/flags/js/quiz.js games/assets/js/engine.js"
+files="games/index.html games/flags/index.html games/flags/js/quiz.js games/flags/stats.html games/assets/js/engine.js"
 for f in $files; do
   sed -i -E "s/\?v=[0-9a-zA-Z]+/?v=$V/g" "$f"
 done

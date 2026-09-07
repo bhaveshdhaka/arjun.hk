@@ -3,6 +3,7 @@ const key = (profile, quizId) => `games.${profile}.${quizId}`;
 const emptyState = () => ({
   totals: { plays: 0, correct: 0, seen: 0, timeMs: 0, score: 0, best: 0 },
   sessions: [],
+  srs: {},
 });
 
 export const Store = {
@@ -16,7 +17,9 @@ export const Store = {
 
   load(quizId) {
     try {
-      return JSON.parse(localStorage.getItem(key(this.profile(), quizId))) || emptyState();
+      const s = JSON.parse(localStorage.getItem(key(this.profile(), quizId))) || emptyState();
+      if (!s.srs) s.srs = {};
+      return s;
     } catch {
       return emptyState();
     }
@@ -37,6 +40,13 @@ export const Store = {
     t.best = Math.max(t.best, session.score);
     s.sessions.push(session);
     if (s.sessions.length > 50) s.sessions = s.sessions.slice(-50);
+    this.save(quizId, s);
+    return s;
+  },
+
+  updateSrs(quizId, srsKey, entry) {
+    const s = this.load(quizId);
+    s.srs[srsKey] = entry;
     this.save(quizId, s);
     return s;
   },

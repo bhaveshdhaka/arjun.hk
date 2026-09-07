@@ -193,3 +193,33 @@ footer { text-align: center; margin-top: 2rem; font-weight: 700; color: #7c4a2a;
   margin: .2rem 0 1rem; font-size: .95rem;
 }
 .verdict.warn { background: #fde8e8; border-color: #f3bcbc; color: #b34040; }
+
+.overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: #5a3a1a55; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+  animation: fadein .25s ease;
+}
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+.overlay-card {
+  background: #ffffffee; border-radius: 1.8rem; padding: 1.4rem 1.2rem;
+  max-width: 480px; width: 100%; max-height: 90dvh; overflow-y: auto;
+  box-shadow: 0 12px 40px #00000038, 0 6px 0 #ffffff88; text-align: center;
+}
+.overlay-card h2 { font-size: 1.5rem; font-weight: 900; margin-bottom: .2rem; }
+.overlay-card .fam { font-size: .85rem; font-weight: 800; color: #9a6b3f; margin-bottom: .8rem; }
+.versus { display: grid; grid-template-columns: 1fr auto 1fr; gap: .6rem; align-items: center; margin-bottom: .9rem; }
+.versus .side { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
+.lflag { background: #fff; border-radius: .9rem; padding: .45rem; box-shadow: 0 6px 18px #00000018; }
+.lflag img { display: block; width: 100%; max-width: 150px; height: auto; border-radius: .35rem; box-shadow: 0 3px 10px #00000026; }
+.versus .nm { font-weight: 900; font-size: 1rem; }
+.vs {
+  width: 2.6rem; height: 2.6rem; border-radius: 50%;
+  background: linear-gradient(180deg, #ff8f5e, #ff5e7e); color: #fff;
+  font-weight: 900; font-size: .95rem; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 0 #c9355a;
+}
+.story {
+  background: #fff8e8; border: 2px solid #ffe29a; border-radius: 1.1rem;
+  padding: .85rem 1rem; font-weight: 800; line-height: 1.5; font-size: .98rem; margin-bottom: 1rem;
+}

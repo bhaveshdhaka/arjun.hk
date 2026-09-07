@@ -1,4 +1,4 @@
-import { Store } from './store.js?v=09070521';
+import { Store } from './store.js?v=09070529';
 
 const registry = new Map();
 const pts = (ms) => 100 + Math.max(0, 50 - Math.floor(ms / 1000) * 5);
@@ -17,7 +17,7 @@ export const QuizEngine = {
   register(def) { registry.set(def.id, def); },
   get(id) { return registry.get(id); },
 
-  run(root, quizId) {
+  run(root, quizId, opts = {}) {
     const def = registry.get(quizId);
     if (!def) { root.innerHTML = '<p>Unknown quiz.</p>'; return; }
 
@@ -41,6 +41,7 @@ export const QuizEngine = {
     };
     def.config.forEach((c) => { state.cfg[c.key] = c.def; });
     loadCfg();
+    if (opts.cfg) Object.assign(state.cfg, opts.cfg);
 
     const optVal = (o) => (o.value !== undefined ? o.value : o);
     const optLabel = (o) => (o.label !== undefined ? o.label : String(o));
@@ -177,6 +178,10 @@ export const QuizEngine = {
       state.results.push(ok);
       if (ok) { state.correct += 1; state.score += gained; state.streak += 1; }
       else { state.streak = 0; }
+      if (def.srsKey && def.updateSrs) {
+        const k = def.srsKey(q);
+        Store.updateSrs(def.id, k, def.updateSrs(Store.load(def.id).srs[k], ok, ms, Date.now()));
+      }
       root.querySelectorAll('.answer').forEach((b) => {
         b.disabled = true;
         const n = Number(b.dataset.opt);
@@ -195,8 +200,33 @@ export const QuizEngine = {
         fb.innerHTML = `It was <b>${esc(q.choices[q.answer])}</b> — we'll see it again soon <span class="cont">tap to continue</span>`;
         fb.className = 'feedback bad';
         state.awaitNext = true;
+        if (def.explain) {
+          const ex = def.explain(q, q.choices[i]);
+          if (ex) showExplain(ex);
+        }
       }
       headerSync();
+    };
+
+    const showExplain = (ex) => {
+      const ov = document.createElement('div');
+      ov.className = 'overlay';
+      ov.innerHTML = `
+        <div class="overlay-card">
+          <h2>👀 Look closely!</h2>
+          <div class="fam">${esc(ex.family || '')}</div>
+          <div class="versus">
+            ${ex.flags.map((f) => `
+              <div class="side">
+                <div class="lflag"><img src="${def.flagSrc ? def.flagSrc(f.code) : ''}" alt="${esc(f.label)}" draggable="false"/></div>
+                <div class="nm">${esc(f.label)}</div>
+              </div>`).join('<div class="vs">VS</div>')}
+          </div>
+          <div class="story">${esc(ex.text)}</div>
+          <button class="btn">Got it 👍</button>
+        </div>`;
+      ov.querySelector('.btn').addEventListener('click', () => { ov.remove(); next(); });
+      root.appendChild(ov);
     };
 
     const next = () => {
@@ -216,7 +246,7 @@ export const QuizEngine = {
       });
       syncCountFromInput();
       saveCfg();
-      state.qs = def.buildQuestions(state.cfg);
+      state.qs = def.buildQuestions(state.cfg, Store.load(def.id).srs);
       if (!state.qs.length) return;
       state.screen = 'play';
       state.idx = 0; state.score = 0; state.correct = 0; state.streak = 0;
@@ -300,6 +330,7 @@ export const QuizEngine = {
             ${def.describe ? `<div class="verdict ${d.warn ? 'warn' : ''}" id="verdict">${d.text}</div>` : ''}
             <div class="actions">
               <button class="btn" data-act="start">▶ Start</button>
+              <a class="btn alt" href="stats/">📊 See my progress</a>
             </div>
           </div>
           ${KEYBAR}`;
@@ -331,10 +362,15 @@ export const QuizEngine = {
           <div class="card">
             <div class="meta" style="margin-bottom:.7rem">All-time: 🏆 best ${s.totals.best} · ${s.totals.plays} games · ${Math.round(s.totals.timeMs / 60000)} min played</div>
             <div class="actions">
-              <button class="btn" data-act="start">🔁 Play again</button>
+              ${(() => {
+                if (!def.weakCount || !def.config.some((c) => c.key === 'focus')) return '';
+                const wc = Math.min(def.weakCount(s.srs), 10);
+                return wc > 0 ? `<button class="btn" data-act="redo-weak">🔁 Redo my weak flags (${wc})</button>` : '';
+              })()}
+              <button class="btn" data-act="start">▶ Play again</button>
               <div class="row">
+                <a class="btn alt" href="stats/">📊 Progress</a>
                 <button class="btn alt" data-act="intro">⚙️ Change setup</button>
-                <button class="btn alt" data-act="quit">🏠 Hub</button>
               </div>
             </div>
           </div>
@@ -388,6 +424,9 @@ export const QuizEngine = {
           } else {
             endSession();
           }
+        } else if (a === 'redo-weak') {
+          state.cfg.focus = 'Weak';
+          start();
         } else if (a === 'intro') {
           state.screen = 'intro';
           render();

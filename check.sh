@@ -19,7 +19,7 @@ else
     test -s "$f" || { echo "EMPTY page: $f"; exit 1; }
     grep -q "</html>" "$f" || { echo "page does not close: $f"; exit 1; }
     dir=$(dirname "$f")
-    for ref in $(grep -oE '(src|href)="[^"]+"' "$f" | sed -E 's/.*="([^"]+)"/\1/' | grep -vE '^(https?:|//|#|mailto:)'); do
+    for ref in $(grep -oE '(src|href)="[^"]+"' "$f" | sed -E 's/.*="([^"]+)"/\1/' | grep -vE '^(https?:|//|#|mailto:)' | grep -v '\$\{'); do
       p="${ref%%\?*}"; p="${p%%#*}"
       case "$p" in /*) target=".$p" ;; *) target="$dir/$p" ;; esac
       test -e "$target" || { echo "MISSING asset: $ref (referenced in $f)"; exit 1; }

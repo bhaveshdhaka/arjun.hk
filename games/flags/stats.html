@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#ffe29a" />
+  <title>My Progress — Flags of the World</title>
+  <link rel="stylesheet" href="../assets/css/base.css?v=09070529" />
+  <style>
+    .bar { height: 1rem; border-radius: 999px; background: #ffffffaa; overflow: hidden; margin: .5rem 0 .3rem; box-shadow: inset 0 2px 6px #00000012; }
+    .bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #ffb35e, #ff5e7e); }
+    .rg { display: flex; align-items: center; gap: .6rem; margin: .5rem 0; }
+    .rg .nm { width: 5.6rem; font-weight: 800; font-size: .92rem; flex-shrink: 0; }
+    .rg .bar { flex: 1; margin: 0; }
+    .rg .pc { width: 2.8rem; text-align: right; font-weight: 900; font-size: .92rem; }
+    .ranks { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .rank { display: inline-flex; align-items: center; gap: .35rem; font-weight: 800; font-size: .92rem; background: #fff0f5; border-radius: 999px; padding: .42rem .9rem; box-shadow: 0 3px 0 #ffe1ec; }
+    .weakgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+    @media (min-width: 701px) { .weakgrid { grid-template-columns: repeat(6, 1fr); } }
+    .mini { background: #fff; border-radius: 1rem; padding: .55rem; text-align: center; box-shadow: 0 3px 0 #eadbc8, 0 5px 12px #00000010; }
+    .mini img { width: 100%; height: auto; border-radius: .35rem; box-shadow: 0 2px 6px #00000022; display: block; }
+    .mini .nm { font-weight: 900; margin: .3rem 0 .05rem; font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mini .acc { font-size: .72rem; font-weight: 900; color: #ff5e7e; }
+    .hrow { display: flex; justify-content: space-between; gap: .6rem; background: #fff; border-radius: 1rem; padding: .6rem .9rem; box-shadow: 0 3px 0 #eadbc8; font-weight: 700; font-size: .9rem; flex-wrap: wrap; margin-bottom: .45rem; }
+    .hrow .when { color: #9a6b3f; font-weight: 800; }
+    .hrow .res { font-weight: 900; color: #ff5e7e; }
+    .empty { text-align: center; font-weight: 800; color: #9a6b3f; padding: 1rem 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <a class="chip" href="./">← Flags</a>
+      <span class="chip">👑 <span id="who"></span></span>
+    </div>
+    <h1 class="title" style="animation:none">My Progress 🚩</h1>
+    <div class="sub" id="profileNote"></div>
+    <div id="content"></div>
+    <div class="actions" style="margin-bottom:1rem">
+      <a class="btn" href="./?focus=Weak">🔁 Drill my weak flags</a>
+    </div>
+    <footer>the caterpillar believes in you 🐛</footer>
+  </div>
+  <script type="module">
+    import { Store } from '../assets/js/store.js?v=09070529';
+    import { stats, RANK_LABELS, GLOBE, WORLD_COUNT } from '../flags/js/build.js?v=09070529';
+    import { REGIONS, COUNTRIES } from '../flags/js/data.js?v=09070529';
+
+    const codeNames = Object.fromEntries(COUNTRIES.map((c) => [c.c, c.n]));
+    const esc = (x) => String(x).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    const p = Store.profile();
+    document.getElementById('who').textContent = p;
+    const s = Store.load('flags');
+    const t = s.totals;
+    document.getElementById('profileNote').textContent =
+      p === 'Guest' ? 'Guest stats live on this device only' : `${Math.round(t.timeMs / 60000)} min played · ${t.plays} quizzes`;
+
+    const st = stats(s.srs);
+    const el = document.getElementById('content');
+
+    if (st.seen === 0) {
+      el.innerHTML = '<div class="card"><div class="empty">Play your first quiz and your progress will appear here! 🌱</div></div>';
+    } else {
+      const mastered = st.ranks.sharp + st.ranks.champion;
+      const masterPct = Math.round(100 * mastered / WORLD_COUNT);
+      const regions = REGIONS.map((r) => {
+        const x = st.byRegion[r] || { attempts: 0, correct: 0 };
+        return { r, pct: x.attempts ? Math.round(100 * x.correct / x.attempts) : 0, empty: !x.attempts };
+      }).sort((a, b) => b.pct - a.pct);
+      const weakestRegion = regions.filter((x) => !x.empty).slice(-1)[0];
+      el.innerHTML = `
+        <div class="card" style="margin-bottom:1.1rem">
+          <div class="big"><span class="pct">${masterPct}%</span><span class="lbl">mastered · ${mastered} of ${WORLD_COUNT} flags</span></div>
+          <div class="bar"><i style="width:${masterPct}%"></i></div>
+          <div class="meta" style="text-align:center">${st.seen} flags seen · ${st.due} due for review</div>
+          <div style="font-weight:900;margin:.8rem 0 .2rem">By region</div>
+          ${regions.map((x) => `
+            <div class="rg"><span class="nm">${GLOBE[x.r] || '🌍'} ${x.r}${weakestRegion && x.r === weakestRegion.r && !x.empty ? ' 👀' : ''}</span>
+            <div class="bar"><i style="width:${x.pct}%"></i></div><span class="pc">${x.empty ? '—' : x.pct + '%'}</span></div>`).join('')}
+        </div>
+        <div class="card" style="margin-bottom:1.1rem">
+          <div style="font-weight:900;margin-bottom:.5rem">Mastery ranks</div>
+          <div class="ranks">
+            ${Object.entries(RANK_LABELS).map(([k, lbl]) => `<span class="rank">${lbl} · ${st.ranks[k]}</span>`).join('')}
+          </div>
+        </div>
+        ${st.weak.length ? `
+        <div class="card" style="margin-bottom:1.1rem">
+          <div style="font-weight:900;margin-bottom:.6rem">Your tricky ones 👀</div>
+          <div class="weakgrid">
+            ${st.weak.map((x) => `
+              <div class="mini">
+                <img src="img/${x.code}.svg" alt="" draggable="false"/>
+                <div class="nm">${esc(codeNames[x.code] || x.code.toUpperCase())}</div>
+                <div class="acc">${x.e.correct}/${x.e.attempts} · box ${x.e.box}</div>
+              </div>`).join('')}
+          </div>
+        </div>` : ''}
+        ${t.plays ? `
+        <div class="card">
+          <div style="font-weight:900;margin-bottom:.6rem">⏱ Recent quizzes</div>
+          ${s.sessions.slice(-5).reverse().map((ses) => `
+            <div class="hrow">
+              <span class="when">${new Date(ses.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · ${ses.n} flags${ses.cfg && ses.cfg.focus === 'Weak' ? ' · weak drill' : ''}</span>
+              <span class="res">${ses.score} ⭐ · ${Math.round(100 * ses.correct / ses.n)}%</span>
+            </div>`).join('')}
+        </div>` : ''}`;
+    }
+  </script>
+</body>
+</html>
