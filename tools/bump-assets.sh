@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Set the asset cache-bust version (?v=) to the current git short SHA.
-# Run before every commit+deploy that touches games/ assets.
+# Set the asset cache-bust version (?v=) to a timestamp. Run before EVERY
+# commit+deploy that touches games/ assets — Cloudflare caches .js/.css by
+# extension, so unchanged URLs would serve stale content.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-SHA=$(git rev-parse --short HEAD)
+V=$(date +%m%d%H%M)
 files="games/index.html games/flags/index.html games/flags/js/quiz.js games/assets/js/engine.js"
 for f in $files; do
-  sed -i -E "s/\?v=[0-9a-zA-Z]+/?v=$SHA/g" "$f"
+  sed -i -E "s/\?v=[0-9a-zA-Z]+/?v=$V/g" "$f"
 done
-echo "asset version bumped to ?v=$SHA"
+echo "asset version bumped to ?v=$V"
 grep -hoE '\?v=[0-9a-zA-Z]+' $files | sort | uniq -c

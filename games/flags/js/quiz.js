@@ -1,5 +1,5 @@
-import { QuizEngine } from '../../assets/js/engine.js?v=1e2760d';
-import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE } from './build.js?v=1e2760d';
+import { QuizEngine } from '../../assets/js/engine.js?v=09070521';
+import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE } from './build.js?v=09070521';
 import { REGIONS } from './data.js';
 
 QuizEngine.register({
@@ -27,6 +27,10 @@ QuizEngine.register({
     stage.innerHTML = `
       <div class="flagcard"><img src="img/${q.c}.svg" alt="Mystery flag" draggable="false"/></div>
       <span class="hint">${GLOBE[q.region] || '🌍'} ${q.region === 'World' ? 'Somewhere in the world' : 'Somewhere in ' + q.region}</span>`;
+  },
+
+  preload(q) {
+    new Image().src = `img/${q.c}.svg`;
   },
 
   srsKey: (q) => `flag:${q.c}`,

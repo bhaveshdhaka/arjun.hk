@@ -36,7 +36,7 @@ for (let i = 1; i < qW50.length; i++) {
   cur = qW50[i].region === qW50[i - 1].region ? cur + 1 : 1;
   maxRun = Math.max(maxRun, cur);
 }
-check(`world 50 -> no 3+ same-region streaks (max run ${maxRun})`, maxRun <= 2);
+check(`world 50 -> no adjacent same-region (max run ${maxRun})`, maxRun === 1);
 
 const qCount = run({ region: ['World'], count: 7 });
 check('world 7 -> 7 questions', qCount.length === 7);

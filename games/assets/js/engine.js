@@ -1,4 +1,4 @@
-import { Store } from './store.js?v=1e2760d';
+import { Store } from './store.js?v=09070521';
 
 const registry = new Map();
 const pts = (ms) => 100 + Math.max(0, 50 - Math.floor(ms / 1000) * 5);
@@ -34,6 +34,9 @@ export const QuizEngine = {
       qStart: 0,
       sessionStart: 0,
       answered: false,
+      awaitNext: false,
+      quitArm: false,
+      moving: false,
       timer: null,
     };
     def.config.forEach((c) => { state.cfg[c.key] = c.def; });
@@ -96,21 +99,28 @@ export const QuizEngine = {
       return '<i class="d"></i>';
     }).join('');
 
-    const header = () => `
-      <div class="topbar">
-        <button class="chip" data-act="quit">✕</button>
-        <span class="dots">${dots()}</span>
-        <span style="display:flex;gap:.4rem">
-          ${state.streak >= 2 ? `<span class="chip">🔥 ${state.streak}</span>` : ''}
-          <span class="chip">⭐ ${state.score}</span>
+    const header = () => {
+      const total = state.qs.length;
+      const progress = total > 12
+        ? `<span class="chip sm">${state.answered ? state.results.length : state.idx + 1}/${total}</span>`
+        : `<span class="dots">${dots()}</span>`;
+      return `
+      <div class="topbar tight">
+        <button class="chip sm" data-act="quit">${state.quitArm ? 'sure?' : '✕'}</button>
+        ${progress}
+        <span style="display:flex;gap:.3rem;margin-left:auto">
+          ${state.streak >= 2 ? `<span class="chip sm">🔥 ${state.streak}</span>` : ''}
+          <span class="chip sm">⭐ ${state.score}</span>
         </span>
       </div>`;
+    };
 
     const KEYBAR = '<div class="keybar">⌨️ <kbd>1</kbd>–<kbd>9</kbd> answer · <kbd>Enter</kbd> next · <kbd>Esc</kbd> quit</div>';
 
     const endSession = () => {
       clearTimeout(state.timer);
       state.timer = null;
+      state.awaitNext = false;
       if (state.results.length === 0) { state.screen = 'intro'; render(); return; }
       const session = {
         at: new Date().toISOString(),
@@ -133,6 +143,8 @@ export const QuizEngine = {
     const showQuestion = () => {
       const q = state.qs[state.idx];
       state.answered = false;
+      state.awaitNext = false;
+      state.quitArm = false;
       state.qStart = performance.now();
       root.innerHTML = `
         ${header()}
@@ -146,6 +158,8 @@ export const QuizEngine = {
         <div class="answers">${q.choices.map((c, i) =>
           `<button class="answer" data-opt="${i}"><span class="num">${i + 1}</span> ${esc(c)}</button>`
         ).join('')}</div>`;
+      const nx = state.qs[state.idx + 1];
+      if (nx && def.preload) def.preload(nx);
     };
 
     const headerSync = () => {
@@ -170,18 +184,30 @@ export const QuizEngine = {
         else if (n === i) b.classList.add('wrong');
       });
       const fb = root.querySelector('#fb');
-      if (ok) fb.innerHTML = `${CHEERS[Math.floor(Math.random() * CHEERS.length)]} +${gained}`;
-      else fb.innerHTML = `It was <b>${esc(q.choices[q.answer])}</b> — we'll see it again soon`;
-      fb.className = `feedback ${ok ? 'good' : 'bad'}`;
+      if (ok) {
+        fb.innerHTML = `${CHEERS[Math.floor(Math.random() * CHEERS.length)]} <span class="cont">tap to continue</span>`;
+        fb.className = 'feedback good';
+        const btn = root.querySelector(`[data-opt="${i}"]`);
+        if (btn) btn.insertAdjacentHTML('beforeend', `<span class="pts">+${gained}</span>`);
+        state.awaitNext = true;
+        state.timer = setTimeout(next, 900);
+      } else {
+        fb.innerHTML = `It was <b>${esc(q.choices[q.answer])}</b> — we'll see it again soon <span class="cont">tap to continue</span>`;
+        fb.className = 'feedback bad';
+        state.awaitNext = true;
+      }
       headerSync();
-      state.timer = setTimeout(next, ok ? 900 : 1800);
     };
 
     const next = () => {
+      if (state.moving) return;
       if (state.timer) { clearTimeout(state.timer); state.timer = null; }
-      else return;
+      else if (!state.awaitNext) return;
+      state.moving = true;
+      state.awaitNext = false;
       if (state.idx + 1 >= state.qs.length) endSession();
       else { state.idx += 1; showQuestion(); }
+      state.moving = false;
     };
 
     const start = () => {
@@ -353,13 +379,22 @@ export const QuizEngine = {
           });
           start();
         } else if (a === 'quit') {
-          endSession();
+          if (state.screen === 'play' && !state.quitArm) {
+            state.quitArm = true;
+            headerSync();
+            setTimeout(() => {
+              if (state.quitArm && state.screen === 'play') { state.quitArm = false; headerSync(); }
+            }, 2500);
+          } else {
+            endSession();
+          }
         } else if (a === 'intro') {
           state.screen = 'intro';
           render();
         }
         return;
       }
+      if (state.awaitNext && state.screen === 'play') { next(); return; }
       const opt = e.target.closest('[data-opt]');
       if (opt) answer(Number(opt.dataset.opt));
     });

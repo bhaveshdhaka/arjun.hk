@@ -50,13 +50,28 @@ export const quotas = (n, pool) => {
 };
 
 export const dealSmart = (items) => {
-  const rest = [...items];
+  const rest = new Map();
+  for (const it of shuffle(items)) {
+    const list = rest.get(it.r) || [];
+    list.push(it);
+    rest.set(it.r, list);
+  }
+  const total = () => [...rest.values()].reduce((a, l) => a + l.length, 0);
   const out = [];
-  while (rest.length) {
-    const prev = out[out.length - 1];
-    let i = prev ? rest.findIndex((x) => x.r !== prev.r) : 0;
-    if (i === -1) i = 0;
-    out.push(rest.splice(i, 1)[0]);
+  let last = null;
+  while (total() > 0) {
+    let pick = null;
+    for (const [r, list] of rest) {
+      if (!list.length || r === last) continue;
+      if (!pick || list.length > rest.get(pick).length) pick = r;
+    }
+    if (!pick) {
+      for (const [r, list] of rest) {
+        if (list.length) { pick = r; break; }
+      }
+    }
+    out.push(rest.get(pick).pop());
+    last = pick;
   }
   return out;
 };
