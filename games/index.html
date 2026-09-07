@@ -5,31 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="theme-color" content="#ffe29a" />
+  <meta name="theme-color" content="#ffe29a" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#2b2118" media="(prefers-color-scheme: dark)" />
   <title>The Play Room — Games &amp; Quizzes</title>
-  <link rel="stylesheet" href="assets/css/base.css?v=09071412" />
+  <script>(function(){var t=null;try{t=localStorage.getItem('theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}document.documentElement.dataset.theme=t})();</script>
+  <link rel="stylesheet" href="assets/css/base.css?v=09071841" />
   <style>
     .flagrow { display: flex; gap: .55rem; margin: .2rem 0; }
-    .flagrow img { width: 3.4rem; height: auto; border-radius: .45rem; box-shadow: 0 3px 8px #00000026; animation: float 3s ease-in-out infinite; }
+    .flagrow img { width: 3.4rem; height: auto; border-radius: .45rem; box-shadow: 0 3px 8px var(--shadow-soft); animation: float 3s ease-in-out infinite; }
     .flagrow img:nth-child(2) { animation-delay: .35s; }
     .flagrow img:nth-child(3) { animation-delay: .7s; }
     .flagrow img:nth-child(4) { animation-delay: 1.05s; }
     .herotop { display: flex; align-items: center; gap: .8rem; }
     .cardlink { text-decoration: none; color: inherit; display: block; }
-    .pbar { display: flex; gap: .4rem; align-items: center; overflow-x: auto; max-width: 70%; padding-bottom: .2rem; -webkit-overflow-scrolling: touch; }
+    .pbar { display: flex; gap: .4rem; align-items: center; overflow-x: auto; flex: 1 1 auto; min-width: 0; padding-bottom: .2rem; -webkit-overflow-scrolling: touch; }
     .pbar::-webkit-scrollbar { display: none; }
     .pbar .chip { white-space: nowrap; flex-shrink: 0; font-size: .85rem; padding: .45rem .85rem; }
     .emojigrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin: .7rem 0 1rem; }
     .emojigrid button {
       font-size: 1.7rem; padding: .55rem 0; border-radius: 1rem; border: 3px solid transparent;
-      background: #fff; cursor: pointer; font-family: inherit; box-shadow: 0 3px 0 #eadbc8;
+      background: var(--flag-card); cursor: pointer; font-family: inherit; box-shadow: 0 3px 0 var(--answer-shadow);
     }
-    .emojigrid button.on { border-color: #ff5e7e; background: #fff0f5; }
-    .prow { display: flex; align-items: center; justify-content: space-between; gap: .6rem; background: #fff; border-radius: 1rem; padding: .6rem .8rem; margin-bottom: .5rem; box-shadow: 0 3px 0 #eadbc8; font-weight: 800; }
-    .prow .del { border: none; background: #fde8e8; color: #b34040; border-radius: .7rem; padding: .35rem .7rem; font-weight: 900; cursor: pointer; font-family: inherit; font-size: .85rem; }
+    .emojigrid button.on { border-color: var(--accent); background: var(--card-soft); }
+    .prow { display: flex; align-items: center; justify-content: space-between; gap: .6rem; background: var(--card); border-radius: 1rem; padding: .6rem .8rem; margin-bottom: .5rem; box-shadow: 0 3px 0 var(--answer-shadow); font-weight: 800; }
+    .prow .del { border: none; background: var(--wrong-bg); color: var(--bad); border-radius: .7rem; padding: .35rem .7rem; font-weight: 900; cursor: pointer; font-family: inherit; font-size: .85rem; }
     .shake { animation: shakeX .4s ease; }
     @keyframes shakeX { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-    .merr { color: #d04b4b; font-weight: 800; font-size: .9rem; min-height: 1.2rem; margin-bottom: .4rem; text-align: center; }
+    .merr { color: var(--bad); font-weight: 800; font-size: .9rem; min-height: 1.2rem; margin-bottom: .4rem; text-align: center; }
     h1.title { margin-top: .4rem; }
     .sub { margin-bottom: .8rem; }
   </style>
@@ -39,6 +41,7 @@
     <div class="topbar tight">
       <a class="chip" href="../">🏠 arjun.hk</a>
       <div class="pbar" id="profiles"></div>
+      <button class="chip" id="themeToggle" aria-label="Toggle light/dark theme" title="Light / dark">🌓</button>
     </div>
     <div id="status" style="text-align:center;font-weight:800;min-height:1.4rem;margin:.2rem 0 .5rem;font-size:.9rem"></div>
     <h1 class="title">The Play Room 🎮</h1>
@@ -73,7 +76,8 @@
     <footer>the caterpillar is watching you play 🐛</footer>
   </div>
   <script type="module">
-    import { Store, EMOJIS, normalizeName, validNewProfile } from './assets/js/store.js?v=09071412';
+    import { Store, EMOJIS, normalizeName, validNewProfile } from './assets/js/store.js?v=09071841';
+    import { bindThemeToggle } from './assets/js/theme.js?v=09071841';
 
     const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const app = document.querySelector('.container');
@@ -93,25 +97,25 @@
     const toast = (msg, ok = true) => {
       const el = document.getElementById('status');
       el.textContent = msg;
-      el.style.color = ok ? '#2e8b47' : '#d04b4b';
+      el.style.color = ok ? 'var(--good)' : 'var(--bad)';
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => {
         el.textContent = persistentStatus();
-        el.style.color = '#5a3a1a99';
+        el.style.color = 'var(--text-faint)';
       }, 4000);
     };
 
     const renderStatus = () => {
       const el = document.getElementById('status');
       el.textContent = persistentStatus();
-      el.style.color = '#5a3a1a99';
+      el.style.color = 'var(--text-faint)';
     };
 
     const renderProfiles = () => {
       const cur = Store.profile();
       const synced = Store.syncEnabled();
       const chips = [
-        `<button type="button" class="chip ${cur === 'Arjun' ? 'on' : 'ghost'}" data-p="Arjun">${synced ? '👑 Arjun<i class="dot"></i>' : '👑 Arjun 🔒'}</button>`,
+        `<button type="button" class="chip ${cur === 'Arjun' ? 'on' : 'ghost'}" data-p="Arjun">${synced ? '👑 Arjun' : '👑 Arjun 🔒'}</button>`,
         `<button type="button" class="chip ${cur === 'Guest' ? 'on' : 'ghost'}" data-p="Guest">👤 Guest</button>`,
         ...Store.profiles().map((p) =>
           `<button type="button" class="chip ${cur === p.name ? 'on' : 'ghost'}" data-p="${esc(p.name)}">${esc(p.emoji)} ${esc(p.name)}</button>`),
@@ -268,6 +272,7 @@
     });
 
     if (Store.syncEnabled()) Store.pull('flags').then(render).catch(() => {});
+    bindThemeToggle(document.getElementById('themeToggle'));
     render();
   </script>
 </body>

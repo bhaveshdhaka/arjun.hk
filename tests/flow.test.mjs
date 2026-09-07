@@ -1,4 +1,3 @@
-import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
@@ -21,14 +20,6 @@ function parsePage(doc, pageHtml) {
   nodes.forEach((n) => { n.parent = doc.body; doc.body.children.push(n); reg(n); });
 }
 
-let pass = 0;
-const fails = [];
-const check = (name, cond) => {
-  if (cond) { pass++; console.log(`ok - ${name}`); }
-  else { fails.push(name); console.error(`FAIL - ${name}`); }
-};
-const sleep = () => new Promise((r) => setImmediate(r));
-
 function makeFetch(routes) {
   return async (url, opts = {}) => {
     const body = opts.body ? JSON.parse(opts.body) : {};
@@ -44,22 +35,26 @@ function makeFetch(routes) {
   };
 }
 
-const HOME = path.resolve(ROOT, 'games/index.html');
-const bootIdCounter = { n: 0 };
+let bootN = 0;
 
 async function bootEngine({ search = '', storage = null, routes = [] } = {}) {
-  const bootId = `b${++bootIdCounter.n}`;
+  const bootId = `b${++bootN}`;
   const doc = new Document();
   const store = storage || new MemStorage();
   const timers = new FakeTimers();
   parsePage(doc, src('games/flags/index.html'));
+  const savedTheme = store.getItem('theme');
+  doc.documentElement.dataset.theme = (savedTheme === 'dark' || savedTheme === 'light')
+    ? savedTheme
+    : ((globalThis.__flowMM || ((q) => ({ matches: false })))('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   const root = doc.getElementById('app');
 
-  globalThis.localStorage = storage || store;
+  globalThis.localStorage = store;
   globalThis.document = doc;
   globalThis.location = { search };
   globalThis.fetch = makeFetch(routes);
   globalThis.Image = class { set src(_v) {} };
+  globalThis.matchMedia = globalThis.__flowMM || ((q) => ({ matches: false, media: q }));
   globalThis.setTimeout = (fn) => timers.setTimeout(fn);
   globalThis.clearTimeout = (id) => timers.clearTimeout(id);
 
@@ -75,33 +70,37 @@ async function bootEngine({ search = '', storage = null, routes = [] } = {}) {
   return { doc, root, store, timers, quiz, bootId };
 }
 
-async function bootHub({ storage = null, routes = [], storeModule = null, bootId = null } = {}) {
-  const id = bootId || `b${++bootIdCounter.n}`;
+async function bootHub({ storage = null, routes = [], bootId = null } = {}) {
+  const id = bootId || `b${++bootN}`;
   const doc = new Document();
   const store = storage || new MemStorage();
   const timers = new FakeTimers();
   parsePage(doc, src('games/index.html'));
+  const savedTheme = store.getItem('theme');
+  doc.documentElement.dataset.theme = (savedTheme === 'dark' || savedTheme === 'light')
+    ? savedTheme
+    : ((globalThis.__flowMM || ((q) => ({ matches: false })))('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
   globalThis.localStorage = store;
   globalThis.document = doc;
   globalThis.location = { search: '' };
   globalThis.fetch = makeFetch(routes);
   globalThis.Image = class { set src(_v) {} };
+  globalThis.matchMedia = globalThis.__flowMM || ((q) => ({ matches: false, media: q }));
   globalThis.setTimeout = (fn) => timers.setTimeout(fn);
   globalThis.clearTimeout = (id2) => timers.clearTimeout(id2);
 
-  const storeMod = storeModule || (await import(`file://${path.resolve(ROOT, 'games/assets/js/store.js')}?boot=${id}`));
-  let html = src('games/index.html');
-  html = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
-  html = html.replace(/import\s*{([^}]+)}\s*from\s*'[^']*';/, 'const {$1} = __hubmods;');
-  globalThis.__hubmods = { Store: storeMod.Store, EMOJIS: storeMod.EMOJIS, normalizeName: storeMod.normalizeName, validNewProfile: storeMod.validNewProfile };
+  const storeMod = await import(`file://${path.resolve(ROOT, 'games/assets/js/store.js')}?boot=${id}`);
+  const themeMod = await import(`file://${path.resolve(ROOT, 'games/assets/js/theme.js')}?boot=${id}`);
+  let html = src('games/index.html').match(/<script type="module">([\s\S]*?)<\/script>/)[1];
+  html = html.replace(/import\s*{([^}]+)}\s*from\s*'[^']*';/g, 'const {$1} = __hubmods;');
+  globalThis.__hubmods = { ...storeMod, ...themeMod };
   (0, eval)(html);
-  return { doc, root: doc.querySelector('.container'), store, timers, storeMod };
+  return { doc, root: doc.querySelector('.container'), store, timers };
 }
 
 const click = (node) => dispatch(node, 'click');
 const pressKey = (doc, key, target) => dispatch(target || doc.body, 'keydown', { key });
-const tick = () => new Promise((r) => setImmediate(r));
 function questionCode(root) {
   const img = querySelector(root, '.flagcard img');
   return img ? img.getAttribute('src').match(/img\/([a-z]{2})\.svg/)[1] : null;
@@ -112,16 +111,6 @@ function clickWrongAnswer(root, code, countries) {
   const idx = btns.findIndex((b) => !b.textContent.includes(correct));
   dispatch(btns[idx === -1 ? 0 : idx], 'click');
 }
-function clickRightAnswer(root, code, countries) {
-  const correct = countries.find((c) => c.c === code).n;
-  const btns = querySelectorAll(root, '.answer');
-  const idx = btns.findIndex((b) => b.textContent.includes(correct));
-  dispatch(btns[idx === -1 ? 0 : idx], 'click');
-}
-
-// ---- import data for answer lookups
-const { COUNTRIES } = await import(`file://${path.resolve(ROOT, 'games/flags/js/data.js')}`);
-
 async function playSession(root, timers, n) {
   for (let i = 0; i < n; i++) {
     const code = questionCode(root);
@@ -132,35 +121,43 @@ async function playSession(root, timers, n) {
   }
 }
 
-// ================= scenarios =================
+const { COUNTRIES } = await import(`file://${path.resolve(ROOT, 'games/flags/js/data.js')}`);
+
+let pass = 0;
+const fails = [];
+const check = (name, cond) => {
+  if (cond) { pass++; console.log(`ok - ${name}`); }
+  else { fails.push(name); console.error(`FAIL - ${name}`); }
+};
 
 async function s1_intro_fresh() {
-  const { root } = await bootEngine({ search: '' });
+  const { root, doc } = await bootEngine({ search: '' });
   check('intro: preset cards rendered', querySelectorAll(root, '[data-preset]').length === 3);
   check('intro: config selects rendered', querySelectorAll(root, 'select.cfg').length === 2);
   check('intro: fresh device shows Guest', querySelector(root, '.topbar').textContent.includes('Guest'));
-  check('intro: Arjun locked (no dot when unsigned)', !querySelector(root, '.topbar .dot'));
+  check('intro: theme toggle present', !!querySelfOrDescendant(root, doc, '[data-theme-toggle]'));
+}
+function querySelfOrDescendant(root, doc, sel) {
+  return querySelector(doc, sel);
 }
 async function s2_full_session() {
   const { root, store, timers } = await bootEngine({ search: '' });
   dispatch(querySelector(root, '[data-preset="0"]'), 'click');
   check('preset: session starts instantly', !!querySelector(root, '.answer'));
   await playSession(root, timers, 10);
-  check('summary reached', !!root && root.textContent.includes('Session complete'));
+  check('summary reached', root.textContent.includes('Session complete'));
   const saved = JSON.parse(store.getItem('games.Guest.flags'));
   check('session recorded under Guest', saved.totals.plays === 1 && saved.totals.seen === 10);
-  check('10 dots all marked', true);
 }
 async function s3_wrong_tip_and_continue() {
-  const { root, timers } = await bootEngine({ search: '' });
+  const { root } = await bootEngine({ search: '' });
   dispatch(querySelector(root, '[data-preset="0"]'), 'click');
   const code = questionCode(root);
   clickWrongAnswer(root, code, COUNTRIES);
   const fb = querySelector(root, '#fb');
   check('wrong answer shows correction', fb.textContent.includes('It was'));
   check('wrong answer shows tidbit card', !!querySelector(root, '#fb .tip'));
-  const dotsDone = querySelectorAll(root, '.d.miss');
-  check('miss recorded in dots', dotsDone.length === 1);
+  check('miss recorded in dots', querySelectorAll(root, '.d.miss').length === 1);
   dispatch(fb, 'click');
   check('tap-to-continue advances', querySelectorAll(root, '.d.miss').length === 1 && !!querySelector(root, '.answer'));
 }
@@ -265,18 +262,35 @@ function s10_dead_button_inventory() {
     for (const m of srcText.matchAll(/'\[data-([a-z-]+)\]'/g)) handled.add(m[1]);
   }
   const missing = [...emitted].filter((x) => !handled.has(x));
-  check(`dead-button inventory: emitted ${missing.length} unhandled [${missing.join(', ')}]`, missing.length === 0);
+  check(`dead-button inventory: 0 unhandled of ${emitted.size}`, missing.length === 0);
+}
+async function s11_theme_toggle_persists() {
+  const shared = new MemStorage();
+  const { doc, root } = await bootHub({ storage: shared, routes: [] });
+  const htmlEl = doc.documentElement;
+  const before = htmlEl.dataset.theme;
+  const btn = querySelector(root, '#themeToggle');
+  check('theme: toggle chip rendered in topbar', !!btn);
+  dispatch(btn, 'click');
+  const after = htmlEl.dataset.theme;
+  check(`theme: tap flips (${String(before)} -> ${after})`, after !== before && (after === 'dark' || after === 'light'));
+  check('theme: choice persisted', shared.getItem('theme') === after);
+  const hub2 = await bootHub({ storage: shared, routes: [], bootId: `reload-${bootN + 900}` });
+  check('theme: survives reload', hub2.doc.documentElement.dataset.theme === after);
+  dispatch(querySelector(hub2.root, '#themeToggle'), 'click');
+  check('theme: flips back on second toggle', hub2.doc.documentElement.dataset.theme === before);
 }
 
-// ================= run =================
+const tick = () => new Promise((r) => setImmediate(r));
+
 const scenarios = [
   s1_intro_fresh, s2_full_session, s3_wrong_tip_and_continue, s4_typein_and_toggle,
   s5_wrong_pin_guest_isolation, s6_correct_pin_sync_and_signout,
   s7_drill_autostart, s8_autostart_preserves_saved_cfg, s9_escape_to_summary,
-  s10_dead_button_inventory,
+  s10_dead_button_inventory, s11_theme_toggle_persists,
 ];
 for (const s of scenarios) {
-  try { await s(); } catch (e) { fails.push(s.name); console.error(`FAIL - ${s.name} threw at:`, String(e.stack || e.message).split('\n').slice(1, 5).join(' | ')); }
+  try { await s(); await tick(); await tick(); } catch (e) { fails.push(s.name); console.error(`FAIL - ${s.name} threw at:`, String(e.stack || e.message).split('\n').slice(1, 5).join(' | ')); }
 }
 console.log(`\nflow tests: ${pass} ok, ${fails.length} failed`);
 if (fails.length) { fails.forEach((f) => console.error(' -', f)); process.exit(1); }

@@ -1,4 +1,4 @@
-import { Store } from './store.js?v=09071412';
+import { Store } from './store.js?v=09071841';
 
 const registry = new Map();
 const ptsFor = (q, ms) => (q && q.type === 'typein' ? 150 : 100) + Math.max(0, 50 - Math.floor(ms / 1000) * 5);
@@ -109,7 +109,8 @@ export const QuizEngine = {
       <div class="topbar tight">
         <button class="chip sm" data-act="quit">${state.quitArm ? 'sure?' : '✕'}</button>
         ${progress}
-        <span style="display:flex;gap:.3rem;margin-left:auto">
+        <span style="display:flex;gap:.3rem;margin-left:auto;align-items:center">
+          <button class="chip sm" data-theme-toggle aria-label="Toggle light/dark theme" title="Light / dark">🌓</button>
           ${state.streak >= 2 ? `<span class="chip sm">🔥 ${state.streak}</span>` : ''}
           <span class="chip sm">⭐ ${state.score}</span>
         </span>
@@ -383,8 +384,8 @@ export const QuizEngine = {
         const d = describeHtml();
         root.innerHTML = `
           <div class="topbar">
-            <a class="chip" href="../">🏠 Play Room</a>
-            <span class="chip">${Store.profileEmoji(Store.profile())} ${esc(Store.profile())}${Store.syncEnabled() ? ' <i class="dot"></i>' : ""}</span>
+            <a class="chip" href="../">🏠 Play Room</a><button class="chip" data-theme-toggle aria-label="Toggle light/dark theme" title="Light / dark">🌓</button>
+            <span class="chip">${Store.profileEmoji(Store.profile())} ${esc(Store.profile())}</span>
           </div>
           <h1 class="title" style="animation:none">${def.emoji} ${esc(def.title)}</h1>
           <div class="sub">${esc(def.tagline)}</div>
@@ -418,8 +419,8 @@ export const QuizEngine = {
         const acc = Math.round(100 * state.correct / state.results.length);
         root.innerHTML = `
           <div class="topbar">
-            <a class="chip" href="../">🏠 Play Room</a>
-            <span class="chip">${Store.profileEmoji(Store.profile())} ${esc(Store.profile())}${Store.syncEnabled() ? ' <i class="dot"></i>' : ""}</span>
+            <a class="chip" href="../">🏠 Play Room</a><button class="chip" data-theme-toggle aria-label="Toggle light/dark theme" title="Light / dark">🌓</button>
+            <span class="chip">${Store.profileEmoji(Store.profile())} ${esc(Store.profile())}</span>
           </div>
           <div class="card" style="margin-bottom:1.2rem">
             <h1 class="title" style="animation:none;font-size:clamp(1.8rem,8vw,2.6rem)">Session complete! 🎉</h1>

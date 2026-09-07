@@ -59,6 +59,16 @@ if grep -rn -F '☁' games/ index.html 2>/dev/null; then
 fi
 echo "glyph check OK"
 
+# Theme system: every page has the anti-flash snippet + theme-color metas;
+# the stylesheet defines the dark palette; the controller module exists.
+for f in index.html $(find games -name '*.html' 2>/dev/null); do
+  grep -q "dataset.theme" "$f" || { echo "MISSING anti-flash theme snippet: $f"; exit 1; }
+  grep -q 'name="theme-color"' "$f" || { echo "MISSING theme-color meta: $f"; exit 1; }
+done
+grep -q '\[data-theme="dark"\]' games/assets/css/base.css || { echo "MISSING dark tokens in base.css"; exit 1; }
+test -f games/assets/js/theme.js || { echo "MISSING games/assets/js/theme.js"; exit 1; }
+echo "theme check OK"
+
 # Data integrity: countries <-> flag files, duplicates, regions
 if command -v node >/dev/null 2>&1; then
   node tools/validate-data.mjs

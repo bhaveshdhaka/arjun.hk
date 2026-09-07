@@ -59,6 +59,7 @@ export class El {
   }
   setAttribute(k, v) { this.attrs[k] = String(v); }
   getAttribute(k) { return this.attrs[k] !== undefined ? this.attrs[k] : null; }
+  removeAttribute(k) { delete this.attrs[k]; }
   appendChild(n) { if (n.parent) n.parent.children = n.parent.children.filter((x) => x !== n); n.parent = this; this.children.push(n); }
   insertAdjacentHTML(_pos, html) { const nodes = parseHTML(html, this); nodes.forEach((n) => (n.parent = this)); this.children.push(...nodes); }
   remove() { if (this.parent) this.parent.children = this.parent.children.filter((x) => x !== this); }
@@ -159,8 +160,12 @@ export function querySelector(root, sel) {
 export class Document extends El {
   constructor() {
     super('#document');
+    this.documentElement = new El('html');
     this.body = new El('body');
-    this.appendChild(this.body);
+    this.documentElement.appendChild(this.body);
+    this.body.parent = this.documentElement;
+    this.documentElement.parent = this;
+    this.appendChild(this.documentElement);
     this.registry = new Map();
   }
   createElement(tag) { return new El(tag); }

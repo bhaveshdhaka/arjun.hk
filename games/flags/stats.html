@@ -5,35 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="theme-color" content="#ffe29a" />
+  <meta name="theme-color" content="#ffe29a" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#2b2118" media="(prefers-color-scheme: dark)" />
   <title>My Progress — Flags of the World</title>
-  <link rel="stylesheet" href="../assets/css/base.css?v=09071412" />
+  <script>(function(){var t=null;try{t=localStorage.getItem('theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}document.documentElement.dataset.theme=t})();</script>
+  <link rel="stylesheet" href="../assets/css/base.css?v=09071841" />
   <style>
-    .bar { height: 1rem; border-radius: 999px; background: #ffffffaa; overflow: hidden; margin: .5rem 0 .3rem; box-shadow: inset 0 2px 6px #00000012; }
-    .bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #ffb35e, #ff5e7e); }
-    .rg { display: flex; align-items: center; gap: .6rem; margin: .5rem 0; }
+    .bar { height: 1rem; border-radius: 999px; background: var(--bar-track); overflow: hidden; margin: .5rem 0 .3rem; box-shadow: inset 0 2px 6px var(--shadow-soft); }
+    .bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--bar-grad-a), var(--bar-grad-b)); }
+    .rg { display: flex; align-items: center; gap: .6rem; margin: .5rem 0; min-width: 0; }
     .rg .nm { width: 5.6rem; font-weight: 800; font-size: .92rem; flex-shrink: 0; }
-    .rg .bar { flex: 1; margin: 0; }
+    .rg .bar { flex: 1; margin: 0; min-width: 0; }
     .rg .pc { width: 2.8rem; text-align: right; font-weight: 900; font-size: .92rem; }
     .ranks { display: flex; gap: .5rem; flex-wrap: wrap; }
-    .rank { display: inline-flex; align-items: center; gap: .35rem; font-weight: 800; font-size: .92rem; background: #fff0f5; border-radius: 999px; padding: .42rem .9rem; box-shadow: 0 3px 0 #ffe1ec; }
+    .rank { display: inline-flex; align-items: center; gap: .35rem; font-weight: 800; font-size: .92rem; background: var(--card-soft); border-radius: 999px; padding: .42rem .9rem; box-shadow: 0 3px 0 var(--chip-shadow); }
     .weakgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
     @media (min-width: 701px) { .weakgrid { grid-template-columns: repeat(6, 1fr); } }
-    .mini { background: #fff; border-radius: 1rem; padding: .55rem; text-align: center; box-shadow: 0 3px 0 #eadbc8, 0 5px 12px #00000010; }
-    .mini img { width: 100%; height: auto; border-radius: .35rem; box-shadow: 0 2px 6px #00000022; display: block; }
+    .mini { background: var(--card); border-radius: 1rem; padding: .55rem; text-align: center; box-shadow: 0 3px 0 var(--answer-shadow), 0 5px 12px var(--shadow-deep); min-width: 0; }
+    .mini img { width: 100%; height: auto; border-radius: .35rem; box-shadow: 0 2px 6px var(--shadow-soft); display: block; background: var(--flag-card); }
     .mini .nm { font-weight: 900; margin: .3rem 0 .05rem; font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mini .acc { font-size: .72rem; font-weight: 900; color: #ff5e7e; }
-    .hrow { display: flex; justify-content: space-between; gap: .6rem; background: #fff; border-radius: 1rem; padding: .6rem .9rem; box-shadow: 0 3px 0 #eadbc8; font-weight: 700; font-size: .9rem; flex-wrap: wrap; margin-bottom: .45rem; }
-    .hrow .when { color: #9a6b3f; font-weight: 800; }
-    .hrow .res { font-weight: 900; color: #ff5e7e; }
-    .empty { text-align: center; font-weight: 800; color: #9a6b3f; padding: 1rem 0; }
+    .mini .acc { font-size: .72rem; font-weight: 900; color: var(--accent); }
+    .hrow { display: flex; justify-content: space-between; gap: .6rem; background: var(--card); border-radius: 1rem; padding: .6rem .9rem; box-shadow: 0 3px 0 var(--answer-shadow); font-weight: 700; font-size: .9rem; flex-wrap: wrap; margin-bottom: .45rem; }
+    .hrow .when { color: var(--text-faint); font-weight: 800; }
+    .hrow .res { font-weight: 900; color: var(--accent); }
+    .empty { text-align: center; font-weight: 800; color: var(--text-faint); padding: 1rem 0; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="topbar">
       <a class="chip" href="./">← Flags</a>
-      <span class="chip"><span id="who">👤 Guest</span></span>
+      <span style="display:flex;gap:.4rem;align-items:center">
+        <button class="chip" data-theme-toggle aria-label="Toggle light/dark theme" title="Light / dark">🌓</button>
+        <span class="chip"><span id="who">👤 Guest</span></span>
+      </span>
     </div>
     <h1 class="title" style="animation:none">My Progress 🚩</h1>
     <div class="sub" id="profileNote"></div>
@@ -44,9 +49,10 @@
     <footer>the caterpillar believes in you 🐛</footer>
   </div>
   <script type="module">
-    import { Store } from '../assets/js/store.js?v=09071412';
-    import { stats, RANK_LABELS, GLOBE, WORLD_COUNT } from '../flags/js/build.js?v=09071412';
-    import { REGIONS, COUNTRIES } from '../flags/js/data.js?v=09071412';
+    import { Store } from '../assets/js/store.js?v=09071841';
+    import { cycleTheme } from '../assets/js/theme.js?v=09071841';
+    import { stats, RANK_LABELS, GLOBE, WORLD_COUNT } from '../flags/js/build.js?v=09071841';
+    import { REGIONS, COUNTRIES } from '../flags/js/data.js?v=09071841';
 
     const codeNames = Object.fromEntries(COUNTRIES.map((c) => [c.c, c.n]));
     const esc = (x) => String(x).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -56,7 +62,7 @@
     const s = Store.load('flags');
     const t = s.totals;
     document.getElementById('profileNote').innerHTML = Store.syncEnabled()
-      ? '<i class="dot"></i> synced across your devices'
+      ? '✅ synced across your devices'
       : 'on this device only';
 
     const st = stats(s.srs);
@@ -110,6 +116,9 @@
             </div>`).join('')}
         </div>` : ''}`;
     }
+    document.addEventListener('click', (e) => {
+      if (e.target.closest && e.target.closest('[data-theme-toggle]')) cycleTheme();
+    });
   </script>
 </body>
 </html>

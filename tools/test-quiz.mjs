@@ -155,3 +155,14 @@ check('profile: guest reserved', validNewProfile('Guest') !== null);
 check('profile: duplicate blocked', validNewProfile('mia', ['Mia']) !== null);
 check('profile: valid name passes', validNewProfile('Mia') === null);
 check('profile: names normalized + capped at 12', normalizeName('  Mia   Bell  ') === 'Mia Bell' && normalizeName('abcdefghijklmno').length === 12);
+
+const theme = await import('../games/assets/js/theme.js');
+check('theme: saved choice wins', theme.initialTheme({ getItem: () => 'dark' }, false) === 'dark');
+check('theme: falls back to system', theme.initialTheme({ getItem: () => null }, true) === 'dark');
+check('theme: system light default', theme.initialTheme({ getItem: () => null }, false) === 'light');
+check('theme: broken storage safe', theme.initialTheme({ getItem: () => { throw new Error('x'); } }, false) === 'light');
+check('theme: invalid saved ignored', theme.initialTheme({ getItem: () => 'sepia' }, true) === 'dark');
+check('theme: next flips', theme.nextTheme('dark') === 'light' && theme.nextTheme('light') === 'dark');
+
+if (failures) { console.error(`\n${failures} test(s) failed`); process.exit(1); }
+console.log('\nquiz logic tests OK');
