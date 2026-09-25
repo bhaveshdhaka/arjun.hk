@@ -1,6 +1,6 @@
 import {
   SLOTS, sectionOrder, currentSlot, cartCount, cartTotal, orderLines, PAY_METHODS,
-} from './clock.js';
+} from './clock.js?v=09250914';
 
 const API = 'https://api.arjun.hk';
 

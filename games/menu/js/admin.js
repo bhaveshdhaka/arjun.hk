@@ -1,4 +1,4 @@
-import { SLOTS, STATE_LABELS, payLabel } from './clock.js';
+import { SLOTS, STATE_LABELS, payLabel } from './clock.js?v=09250914';
 
 const API = 'https://api.arjun.hk';
 export const ACTIONS = ['login', 'logout', 'tab', 'additem', 'del', 'up', 'down', 'sold', 'photo', 'save', 'tables-inc', 'tables-dec', 'ordnext', 'dismissmsg'];
