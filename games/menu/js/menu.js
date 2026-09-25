@@ -198,6 +198,16 @@ function pillHTML() {
 
 /* ---------- wiring ---------- */
 
+// Cart-only repaint: never re-renders the menu grid, so cards don't
+// re-animate and rapid taps always land on the same button.
+function cartRepaint() {
+  const modal = state.sheetOpen || state.tableOpen;
+  setHTML('cartPill', pillHTML());
+  setHidden('tableBar', modal);
+  setHidden('cartPill', modal || !cartCount(state.cart));
+  if (state.sheetOpen && !state.tableOpen) setHTML('orderSheet', sheetHTML());
+}
+
 function paint() {
   const modal = state.sheetOpen || state.tableOpen;
   setHTML('menuRoot', renderMenuGrid());
@@ -260,32 +270,32 @@ async function act(btn) {
     const id = btn.dataset.id;
     state.cart[id] = Math.min(20, (state.cart[id] || 0) + 1);
     syncCart();
-    paint();
+    cartRepaint();
     return;
   }
   if (key === 'inc') {
     const id = btn.dataset.id;
     state.cart[id] = Math.min(20, (state.cart[id] || 0) + 1);
     syncCart();
-    paint();
+    cartRepaint();
     return;
   }
   if (key === 'dec') {
     const id = btn.dataset.id;
     state.cart[id] = Math.max(1, (state.cart[id] || 1) - 1);
     syncCart();
-    paint();
+    cartRepaint();
     return;
   }
   if (key === 'rm') {
     delete state.cart[btn.dataset.id];
     syncCart();
-    paint();
+    cartRepaint();
     return;
   }
   if (key === 'pay') {
     state.pay = btn.dataset.key;
-    paint();
+    cartRepaint();
     return;
   }
 }
