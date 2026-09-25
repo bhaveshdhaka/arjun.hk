@@ -306,9 +306,13 @@ async function uploadPhoto(file, item) {
 export async function init() {
   state.token = lread('menu.adminToken', null);
   const root = document.getElementById('app');
-  document.body.appendChild(Object.assign(document.createElement('input'), { type: 'file', accept: 'image/*', hidden: true, 'data-id': 'photoPicker' }));
-  const picker = document.querySelector('input[data-id="photoPicker"]');
-  if (picker) {
+  const picker = document.createElement('input');
+  picker.type = 'file';
+  picker.accept = 'image/*';
+  picker.setAttribute('data-id', 'photoPicker');
+  picker.hidden = true;
+  document.body.appendChild(picker);
+  if (true) {
     picker.addEventListener('change', async () => {
       const file = picker.files && picker.files[0];
       picker.value = '';
