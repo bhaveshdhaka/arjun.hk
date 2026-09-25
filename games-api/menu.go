@@ -383,7 +383,7 @@ func (s *apiServer) handleOrderCreate(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "bad order body")
 		return
 	}
-	if in.Table < 1 || in.Table > s.menuTables() {
+	if in.Table < 1 || in.Table > effectiveTables(s.menuTables()) {
 		s.orderIP.fail(ip)
 		writeErr(w, http.StatusBadRequest, "table number not available")
 		return
@@ -511,4 +511,15 @@ func (s *apiServer) menuTables() int {
 		return 0
 	}
 	return m.Tables
+}
+
+// defaultTables matches the guest page fallback: until the admin configures
+// the restaurant, both sides agree on this many tables.
+const defaultTables = 10
+
+func effectiveTables(n int) int {
+	if n <= 0 {
+		return defaultTables
+	}
+	return n
 }

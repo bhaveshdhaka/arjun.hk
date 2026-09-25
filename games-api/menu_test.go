@@ -257,6 +257,19 @@ func TestOrderCreateHappyPath(t *testing.T) {
 	}
 }
 
+func TestOrderDefaultTablesWhenUnconfigured(t *testing.T) {
+	s := newTestServer(t, "x")
+	_, _ = s.menu.update(Menu{Tables: 0, Items: []MenuItem{{ID: "a", Name: "A", Price: 5, Menu: "allday"}}})
+	rr := postOrder(t, s, map[string]any{"table": 10, "items": []map[string]any{{"id": "a", "qty": 1}}, "pay": "cash"})
+	if code(t, rr) != 200 {
+		t.Fatalf("unconfigured tables should still accept table 10 (default), got %d", rr.Code)
+	}
+	rr = postOrder(t, s, map[string]any{"table": 11, "items": []map[string]any{{"id": "a", "qty": 1}}, "pay": "cash"})
+	if code(t, rr) != 400 {
+		t.Fatalf("table 11 should exceed default 10, got %d", rr.Code)
+	}
+}
+
 func TestOrderStatusTransition(t *testing.T) {
 	s := newTestServer(t, "x")
 	tok := tokenFor(t, s)
