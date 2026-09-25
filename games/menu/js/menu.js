@@ -1,6 +1,6 @@
 import {
   SLOTS, sectionOrder, currentSlot, cartCount, cartTotal, orderLines, PAY_METHODS,
-} from './clock.js?v=09251120';
+} from './clock.js?v=09251443';
 
 const API = 'https://api.arjun.hk';
 
@@ -15,7 +15,7 @@ const SEED = {
   ],
 };
 
-export const ACTIONS = ['table', 'picktable', 'closetable', 'cartbtn', 'closesh', 'sec', 'add', 'inc', 'dec', 'rm', 'pay', 'send', 'done'];
+export const ACTIONS = ['table', 'picktable', 'closetable', 'cartbtn', 'closesh', 'sec', 'add', 'inc', 'dec', 'rm', 'pay', 'send', 'done', 'jump'];
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -88,12 +88,12 @@ function cardHTML(it, inCurrent) {
     ? `<img class="card-img" src="${esc(src)}" alt="${esc(it.name)}" loading="lazy" />`
     : `<div class="card-emoji">${esc(it.emoji || '🍽️')}</div>`;
   const action = it.soldOut
-    ? '<div class="soldoutbadge">Sold out 💤</div>'
+    ? '<div class="soldoutbadge">Sold out — back soon 💤</div>'
     : `<button class="addbtn${inCurrent ? ' hot' : ''}" data-act="add" data-id="${esc(it.id)}" aria-label="Add ${esc(it.name)} to order">+ Add</button>`;
   return `
     <div class="card${it.soldOut ? ' off' : ''}">
       ${visual}
-      <div class="card-name">${esc(it.name)}</div>
+      <div class="card-name"><span class="dish-emoji" aria-hidden="true">${esc(it.emoji || '🍽️')}</span> ${esc(it.name)}</div>
       ${it.desc ? `<div class="card-desc">${esc(it.desc)}</div>` : ''}
       <div class="card-price">$${esc(it.price)} dollarbucks</div>
       ${action}
@@ -110,14 +110,22 @@ function renderMenuGrid() {
       ? list.map((it) => cardHTML(it, now)).join('')
       : `<div class="emptynote">${now ? 'Nothing on this menu right now — check back later! 🙂' : 'Check back during serving hours! 🙂'}</div>`;
     return `
-      <div class="menu-section${now ? ' now' : ' other'}">
-        <button class="sec-head" data-act="sec" data-sec="${esc(secKey)}" aria-expanded="${now ? 'true' : 'false'}">
+      <div class="menu-section${now ? ' now' : ' other'}" id="sec-${esc(secKey)}">
+        <button class="sec-head" data-act="sec" data-sec="${esc(secKey)}" aria-expanded="true" aria-label="${esc(sec.label)} menu, jump and browse">
           <span class="sec-title">${esc(sec.emoji)} ${esc(sec.label)}${now ? ' <span class="nowbadge">now</span>' : ''}</span>
           <span class="sec-hours">${esc(sec.hours)}</span>
           <span class="sec-chev" aria-hidden="true">▾</span>
         </button>
-        <div class="sec-body" data-secbody="${esc(secKey)}"${now ? '' : ' hidden'}>${rows}</div>
+        <div class="sec-body" data-secbody="${esc(secKey)}">${rows}</div>
       </div>`;
+  }).join('');
+}
+
+function renderJumpChips() {
+  const current = currentSlot(new Date());
+  return sectionOrder(current).map((secKey) => {
+    const sec = SLOTS.find((s) => s.key === secKey) || { label: secKey, emoji: '🍽️' };
+    return `<a class="jumpchip" href="#sec-${esc(secKey)}" data-jump="${esc(secKey)}">${esc(sec.emoji)} ${esc(sec.label)}</a>`;
   }).join('');
 }
 
@@ -211,6 +219,7 @@ function cartRepaint() {
 function paint() {
   const modal = state.sheetOpen || state.tableOpen;
   setHTML('menuRoot', renderMenuGrid());
+  setHTML('jumpBar', renderJumpChips());
   setHTML('tableBar', tableBarHTML());
   setHTML('cartPill', pillHTML());
   setHTML('tableGrid', tablePickerHTML());
@@ -219,6 +228,9 @@ function paint() {
   setHidden('cartPill', modal || !cartCount(state.cart));
   setHidden('tableOverlay', !state.tableOpen);
   setHidden('orderSheet', !state.sheetOpen || state.tableOpen);
+  try {
+    document.body.dataset.cartpill = (cartCount(state.cart) > 0 && !modal) ? '1' : '0';
+  } catch (e) { /* domkit */ }
 }
 
 function setHTML(id, html) {

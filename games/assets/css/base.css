@@ -72,6 +72,7 @@ body {
 .topbar.tight { flex-wrap: nowrap; gap: .35rem; margin-bottom: .7rem; }
 .chip {
   display: inline-flex; align-items: center; gap: .4rem;
+  min-height: 44px;
   font-weight: 800; font-size: .95rem; color: var(--text);
   background: var(--chip-bg); border-radius: 999px; padding: .5rem 1rem;
   box-shadow: 0 3px 0 var(--chip-shadow); text-decoration: none; border: none;
@@ -79,7 +80,7 @@ body {
 }
 .chip.ghost { background: var(--chip-ghost); box-shadow: none; }
 .chip.on { outline: 3px solid var(--accent)55; }
-.chip.sm { font-size: .82rem; padding: .35rem .75rem; box-shadow: 0 2px 0 var(--chip-shadow); }
+.chip.sm { font-size: .82rem; padding: .35rem .75rem; box-shadow: 0 2px 0 var(--chip-shadow); min-height: 40px; }
 
 .title {
   font-size: clamp(2.2rem, 9vw, 3.6rem); font-weight: 900; text-align: center;

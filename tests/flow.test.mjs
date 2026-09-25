@@ -424,7 +424,7 @@ async function bootAdmin({ storage = null, menu = null, orders = [], extraRoutes
         tables: 12,
         items: [
           { id: 'cheese', name: 'Cheese', emoji: '🧀', price: 13, menu: 'allday', img: 'images/cheese.png' },
-          { id: 'bagel', name: 'Bagel', emoji: '🥯', price: 20, menu: 'breakfast', img: 'images/bagel.png' },
+          { id: 'bagel', name: 'Bagel', emoji: '🥯', price: 20, menu: 'allday', img: 'images/bagel.png' },
         ],
       } }),
     },
@@ -562,7 +562,7 @@ async function s21_admin_menu_edit_and_save() {
   dispatch(sold, 'click');
   const soldRow = querySelectorAll(root, '.mi')[0]; // rows re-render on toggle
   const soldBtn = querySelector(soldRow, '[data-act="sold"]');
-  MENU_OK(String((soldBtn && soldBtn.attrs.class) || '').includes('sel'), 'admin editor: sold-out toggles');
+  MENU_OK(String((soldBtn && soldBtn.attrs.class) || '').includes('off'), 'admin editor: sold-out toggles (switch marks off)');
   const before = querySelectorAll(root, '.mi').map((r) => r.dataset.mi);
   dispatch(querySelector(first, '[data-act="down"]'), 'click');
   const after = querySelectorAll(root, '.mi').map((r) => r.dataset.mi);
@@ -574,7 +574,8 @@ async function s21_admin_menu_edit_and_save() {
   await tick2();
   const put = (apiCalls.find(([k]) => k === 'menu-put') || [])[1];
   MENU_OK(put && put.items.length === 3 && put.items.every((it, i) => it.sort === i), 'admin editor: save posts items with sort');
-  MENU_OK(root.textContent.includes('Saved! Menu is live'), 'admin editor: saved toast');
+  MENU_OK(root.textContent.includes('Live at')
+  || false, 'admin editor: saved toast');
 }
 
 async function s22_admin_tables() {
@@ -657,7 +658,7 @@ async function s24_menu_dead_buttons() {
   dispatch(querySelector(da.doc, '#pinForm'), 'submit');
   await tick2();
   await tick2();
-  const adminActions = ['login', 'logout', 'tab', 'additem', 'del', 'up', 'down', 'sold', 'photo', 'save', 'tables-inc', 'tables-dec', 'ordnext', 'dismissmsg'];
+  const adminActions = ['login', 'logout', 'tab', 'additem', 'del', 'up', 'down', 'sold', 'photo', 'save', 'tables-inc', 'tables-dec', 'ordnext', 'dismissmsg', 'reload-menu', 'draft-restore', 'draft-discard', 'conflict-overwrite', 'conflict-discard', 'undo', 'sort', 'emopick', 'emochoose', 'emoclose'];
   const collectActs = (el, out = []) => {
     if (el.attrs && el.attrs['data-act']) out.push(el.attrs['data-act']);
     (el.children || []).forEach((c) => collectActs(c, out));
@@ -764,7 +765,8 @@ async function s27_admin_conflict_409_keeps_draft() {
   dispatch(querySelector(doc, '[data-act="conflict-overwrite"]'), 'click');
   await tick2();
   await tick2();
-  MENU_OK(root.textContent.includes('Saved! Menu is live'), 'conflict: overwrite saves after refresh');
+  MENU_OK(root.textContent.includes('Live at')
+  || false, 'conflict: overwrite saves after refresh');
   const last = apiCalls.filter(([k]) => k === 'menu-put').pop();
   MENU_OK(last && last[1].items.length === 3, 'conflict: overwrite posts the draft');
 }
@@ -831,12 +833,15 @@ async function s30_admin_price_and_emoji_sane() {
   dispatch(price, 'input');
   dispatch(price, 'focusout');
   MENU_OK(querySelectorAll(root, '.mi')[0].querySelector('[data-field="price"]').value === '1000', 'price: clamped at 1000');
-  const emoji = querySelectorAll(root, '.mi')[0].querySelector('[data-field="emoji"]');
-  emoji.value = '👨‍👩‍👧‍👧xxx';
-  dispatch(emoji, 'input');
-  dispatch(emoji, 'focusout');
-  const got = Array.from(querySelectorAll(root, '.mi')[0].querySelector('[data-field="emoji"]').value);
-  MENU_OK(got.length <= 8 && got.every((c) => { const cp = c.codePointAt(0); return cp < 0xD800 || cp > 0xDFFF; }), 'emoji: capped at 8 codepoints, no lone surrogates');
+  // emoji is now a picker, not a text field
+  MENU_OK(!querySelectorAll(root, '.mi')[0].querySelector('[data-field="emoji"]'), 'emoji: free-text input is gone');
+  dispatch(querySelectorAll(root, '.mi')[0].querySelector('[data-act="emopick"]'), 'click');
+  MENU_OK(!!querySelectorAll(root, '.mi')[0].querySelector('.emopanel'), 'emoji: picker opens');
+  const chip = querySelectorAll(root, '.mi')[0].querySelector('.emochip[data-act="emochoose"]');
+  dispatch(chip, 'click');
+  MENU_OK(!querySelectorAll(root, '.mi')[0].querySelector('.emopanel'), 'emoji: panel closes after choose');
+  MENU_OK((querySelectorAll(root, '.mi')[0].querySelector('.emobtn').textContent || '').trim() === (chip.textContent || '').trim(), 'emoji: chosen glyph lands on the card');
+// (no free-text path: only picker chips can set emoji)
 }
 
 const scenarios = [

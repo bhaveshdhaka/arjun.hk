@@ -38,13 +38,14 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     [hidden] { display: none !important; }
+    body[data-cartpill="1"] { padding-bottom: calc(9.4rem + env(safe-area-inset-bottom)); }
     html, body { height: 100%; }
     body {
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
       background: linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 55%, var(--bg-3) 100%);
       color: var(--text);
       min-height: 100vh; min-height: 100dvh;
-      padding: calc(1.5rem + env(safe-area-inset-top)) 1rem calc(2rem + env(safe-area-inset-bottom));
+      padding: calc(1.5rem + env(safe-area-inset-top)) 1rem calc(5rem + env(safe-area-inset-bottom));
       overflow-x: hidden;
       overscroll-behavior: none;
       touch-action: manipulation;
@@ -199,6 +200,31 @@
     @media (min-width: 769px) {
       .menu { grid-template-columns: repeat(3, 1fr); }
     }
+    @media (min-width: 1024px) {
+      .menu { grid-template-columns: repeat(4, 1fr); gap: 1.2rem; }
+      .container { max-width: 1180px; }
+      .card { padding: 1.2rem; }
+    }
+    @media (min-width: 768px) {
+      .ov-card, .sheet { border-radius: 1.8rem; max-width: 520px; margin-bottom: 0; padding-bottom: 1.4rem; }
+      .overlay { align-items: center; padding-bottom: 2rem; }
+      .sheet { position: fixed; left: 50%; top: 50%; bottom: auto; transform: translate(-50%, -50%); border-radius: 1.8rem; padding-bottom: 1.4rem; animation: none; max-height: 82dvh; margin-bottom: 0; }
+      html { scroll-behavior: smooth; }
+    }
+    .jumpbar {
+      position: sticky; z-index: 12; top: 0; display: flex; gap: .4rem; overflow-x: auto;
+      padding: .45rem .2rem .55rem; margin: 0 0 .9rem; -webkit-overflow-scrolling: touch;
+      background: transparent; backdrop-filter: blur(8px); border-radius: 1.2rem;
+    }
+    .jumpbar::-webkit-scrollbar { display: none; }
+    .jumpchip {
+      flex-shrink: 0; display: inline-flex; align-items: center; gap: .35rem;
+      font-size: .92rem; font-weight: 800; color: var(--text);
+      background: var(--chip-bg); border-radius: 999px; padding: .5rem 1rem; min-height: 40px;
+      box-shadow: 0 3px 0 var(--chip-shadow); text-decoration: none; touch-action: manipulation;
+    }
+    .menu-section { scroll-margin-top: 3.4rem; }
+    .dish-emoji { margin-right: .2rem; }
     /* ---- online menu additions ---- */
     .menu-section { margin-bottom: 1.2rem; }
     .menu-section .sec-head, .menu.fixed .sec-head { border: none; }
@@ -340,6 +366,7 @@
       <h1>Baby Boy's<br />Restaurant</h1>
       <div class="badge">Now Open! 🎉</div>
     </header>
+    <div id="jumpBar" class="jumpbar" aria-label="Menu sections"></div>
     <div class="menu" id="menuRoot"></div>
     <div class="pay">
       <div class="pay-title">We accept dollarbucks 💳</div>
@@ -380,7 +407,7 @@
       </div>
     </div>
     <a class="games-link" href="games/">🎮 Play games in the Play Room →</a>
-    <footer> Come feed the caterpillar after lunch! 🐛 <a href="/admin.html" style="color:inherit;opacity:.55;text-decoration:underline">staff</a></footer>
+    <footer> Come feed the caterpillar after lunch! 🐛 <a href="/admin.html" style="color:inherit;opacity:.55;text-decoration:underline;display:inline-block;padding:.45rem .5rem;min-height:44px">staff</a></footer>
   </div>
 
   <!-- online menu: mounts -->
@@ -396,7 +423,7 @@
   <div id="orderSheet" class="sheet" hidden role="dialog" aria-label="Your order"></div>
 
   <script type="module">
-    import { init } from './games/menu/js/menu.js?v=09251120';
+    import { init } from './games/menu/js/menu.js?v=09251443';
     init();
   </script>
 

@@ -1,7 +1,7 @@
-import { SLOTS, STATE_LABELS, payLabel } from './clock.js?v=09251120';
+import { SLOTS, STATE_LABELS, payLabel } from './clock.js?v=09251443';
 
 const API = 'https://api.arjun.hk';
-export const ACTIONS = ['login', 'logout', 'tab', 'additem', 'del', 'up', 'down', 'sold', 'photo', 'save', 'tables-inc', 'tables-dec', 'ordnext', 'dismissmsg', 'reload-menu', 'draft-restore', 'draft-discard', 'conflict-overwrite', 'conflict-discard', 'undo'];
+export const ACTIONS = ['login', 'logout', 'tab', 'additem', 'del', 'up', 'down', 'sold', 'photo', 'save', 'tables-inc', 'tables-dec', 'ordnext', 'dismissmsg', 'reload-menu', 'draft-restore', 'draft-discard', 'conflict-overwrite', 'conflict-discard', 'undo', 'sort', 'emopick', 'emochoose', 'emoclose'];
 
 export const STATUS_FLOW = ['pending', 'cooking', 'completed'];
 
@@ -42,6 +42,10 @@ const state = {
   photoFor: null,
   pollTimer: null,
   expired: false,
+  sortBy: 'menu',  // 'menu' | 'price' | 'name' — how the list is organized
+  emojiFor: null,  // item id whose emoji picker is open
+  saving: false,   // a PUT is in flight
+  autosaveTimer: null,
 };
 
 const DRAFT_KEY = 'menu.draft';
@@ -52,6 +56,20 @@ function saveDraft() {
   if (!state.menu) return;
   lwrite(DRAFT_KEY, { rev: state.menu.rev, tables: state.menu.tables, items: state.menu.items, at: Date.now() });
   state.dirty = true;
+  scheduleAutosave();
+}
+
+// Auto-save: ~1.2s after the last edit lands, push to the server so the live
+// menu really is live without anyone hunting for a Save button. The conflict
+// guard still protects against two admins racing.
+function scheduleAutosave() {
+  if (!state.token || !state.menuLoaded || state.loadFailed || state.conflict) return;
+  if (state.autosaveTimer) clearTimeout(state.autosaveTimer);
+  state.autosaveTimer = setTimeout(() => {
+    state.autosaveTimer = null;
+    if (!state.dirty || state.saving || state.conflict) return;
+    void save();
+  }, 1200);
 }
 function readDraft() {
   const d = lread(DRAFT_KEY, null);
@@ -192,6 +210,21 @@ function saveDisabled() {
   return !state.menuLoaded || state.conflict;
 }
 
+const SORT_BY = {
+  menu: '⌚ By menu time',
+  price: '💰 By price',
+  name: '🔤 By name A→Z',
+};
+
+const GROUP_ORDER = ['breakfast', 'lunch', 'dinner', 'midnight', 'allday'];
+
+function sortChipsHTML() {
+  return `
+    <div class="sortchips" role="group" aria-label="Organize dishes">
+      ${Object.keys(SORT_BY).map((k) => `<button class="schip${state.sortBy === k ? ' on' : ''}" data-act="sort" data-key="${esc(k)}">${SORT_BY[k]}</button>`).join('')}
+    </div>`;
+}
+
 function menuTabHTML() {
   const items = state.menu ? state.menu.items : [];
   let banner = '';
@@ -204,42 +237,85 @@ function menuTabHTML() {
       <button class="tool" data-act="conflict-discard">Load theirs</button></div>`;
   }
   const draftNote = state.dirty ? '<div class="mi-imgnote">unsaved edits are drafted on this device ✓</div>' : '';
+  const cards = items.map(cardHTML).join('');
   return `
     ${banner}
     ${toastHTML()}
-    <div class="tab-note">Edit dishes, then press <b>Save menu</b>. Changes go live instantly.</div>
-    ${items.map((it) => cardHTML(it)).join('')}
+    ${sortChipsHTML()}
+    ${state.sortBy === 'menu' ? groupedHTML(items) : `<div class="flatlist">${cards}</div>`}
     <button class="bigbtn add" data-act="additem" ${state.loadFailed ? 'disabled' : ''}>+ Add a dish</button>
     <button class="bigbtn" data-act="save" ${saveDisabled() ? 'disabled' : ''}>💾 Save menu</button>
     ${draftNote}`;
 }
 
+function groupedHTML(items) {
+  const sections = [
+    ['breakfast', 'Breakfast'], ['lunch', 'Lunch'], ['dinner', 'Dinner'], ['midnight', 'Midnight Snacks'], ['allday', 'All Day'],
+  ];
+  return sections.map(([key, label]) => {
+    const group = items.filter((it) => it.menu === key);
+    const info = SLOTS.find((s) => s.key === key) || { emoji: '♾️' };
+    return `
+      <div class="adgroup">
+        <div class="adgroup-head">${esc(info.emoji)} ${esc(label)} <span class="cnt">(${esc(group.length)})</span></div>
+        <div class="adgroup-body">
+          ${group.length ? group.map((it) => cardHTML(it)).join('') : '<div class="emptynote">Nothing here yet — add one 👇 or drag from All Day when editing its section</div>'}
+        </div>
+      </div>`;
+  }).join('');
+}
+
 function cardHTML(it) {
   const confirming = state.confirmDel === it.id;
   const delLabel = confirming ? 'Sure?' : '🗑';
+  const imgSrc = it.img ? (it.img.startsWith('/') ? API + it.img : it.img) : '';
+  const thumb = imgSrc
+    ? `<img class="thumb-img" src="${esc(imgSrc)}" alt="${esc(it.name)} photo" loading="lazy" />`
+    : '<span class="thumb-empty">🍽️</span>';
   return `
-    <div class="mi" data-mi="${esc(it.id)}">
-      <div class="mi-row">
-        <input class="in emoji" data-field="emoji" value="${esc(it.emoji || '')}" aria-label="dish emoji" />
-        <input class="in name" data-field="name" value="${esc(it.name)}" maxlength="40" aria-label="dish name" />
-        <input class="in price" data-field="price" value="${esc(it.price)}" inputmode="numeric" aria-label="price" />
+    <div class="mi${it.soldOut ? ' off' : ''}" data-mi="${esc(it.id)}">
+      <button class="mi-photo${imgSrc ? '' : ' empty'}" data-act="photo" data-id="${esc(it.id)}" aria-label="Change the photo of ${esc(it.name)}">
+        ${thumb}<span class="thumb-badge">📷</span>
+      </button>
+      <div class="mi-main">
+        <div class="mi-row">
+          <button class="emobtn" data-act="emopick" data-id="${esc(it.id)}" aria-label="Change the emoji of ${esc(it.name)}">${esc(it.emoji || '🍽️')}</button>
+          <input class="in name" data-field="name" value="${esc(it.name)}" maxlength="40" aria-label="dish name" />
+          <span class="pricewrap">$<input class="in price" data-field="price" value="${esc(it.price)}" inputmode="numeric" aria-label="price in dollarbucks" /></span>
+        </div>
+        <div class="mi-row">
+          <input class="in desc" data-field="desc" value="${esc(it.desc || '')}" maxlength="120" placeholder="description (optional)" aria-label="description" />
+          <select class="in slot" data-field="slot" aria-label="menu section">
+            ${SLOTS.filter((s) => s.key !== 'allday').map((s) => `<option value="${esc(s.key)}"${it.menu === s.key ? ' selected' : ''}>${esc(s.emoji)} ${esc(s.label)}</option>`).join('')}
+            <option value="allday"${it.menu === 'allday' ? ' selected' : ''}>♾️ All Day</option>
+          </select>
+        </div>
+        <div class="mi-tools">
+          <button class="sw${it.soldOut ? ' off' : ''}" data-act="sold" data-id="${esc(it.id)}" role="switch" aria-checked="${it.soldOut ? 'true' : 'false'}" aria-label="${it.soldOut ? `${it.name} is sold out — tap to make available` : `${it.name} is available — tap to mark sold out`}">
+            <span class="sw-pill"><span class="sw-dot"></span></span>
+            <span class="sw-lbl">${it.soldOut ? 'Sold out' : 'Available'}</span>
+          </button>
+          <span class="tool-sp"></span>
+          <button class="tool" data-act="up" data-id="${esc(it.id)}" aria-label="Move up">↑</button>
+          <button class="tool" data-act="down" data-id="${esc(it.id)}" aria-label="Move down">↓</button>
+          <button class="tool danger" data-act="del" data-id="${esc(it.id)}" aria-label="Delete ${esc(it.name)}">${delLabel}</button>
+        </div>
+        <div class="mi-imgnote">${imgSrc ? (it.img.startsWith('/') ? 'photo saved ✓ — tap to replace' : 'stock photo — tap to replace') : 'no photo yet — tap to add'}</div>
       </div>
-      <div class="mi-row">
-        <input class="in desc" data-field="desc" value="${esc(it.desc || '')}" maxlength="120" placeholder="description (optional)" aria-label="description" />
-        <select class="in slot" data-field="slot" aria-label="menu section">
-          ${SLOTS.filter((s) => s.key !== 'allday').map((s) => `<option value="${esc(s.key)}"${it.menu === s.key ? ' selected' : ''}>${esc(s.emoji)} ${esc(s.label)}</option>`).join('')}
-          <option value="allday"${it.menu === 'allday' ? ' selected' : ''}>♾️ All Day</option>
-        </select>
+      ${confirmEmojiPanelHTML(it)}
+    </div>`;
+}
+
+const EMOJIS = ['🥯', '🍞', '🥐', '🥞', '🧇', '🍳', '🥪', '🌯', '🌮', '🍕', '🍔', '🌭', '🥨', '🍟', '🧀', '🥑', '🥗', '🍜', '🍲', '🍛', '🍣', '🥟', '🥢', '🧆', '🍗', '🥩', '🥓', '🥚', '🍎', '🍓', '🍌', '🍇', '🍉', '🍊', '🍍', '🥭', '🍒', '🧁', '🍰', '🎂', '🍩', '🍪', '🍫', '🍬', '🍭', '🍦', '🥤', '🧋', '🍵', '☕', '🧀', '🥛', '🍯', '🧂', '🥄', '🍽️'];
+
+function confirmEmojiPanelHTML(it) {
+  if (state.emojiFor !== it.id) return '';
+  return `
+    <div class="emopanel" role="dialog" aria-label="Pick an emoji for ${esc(it.name)}">
+      <div class="emopanel-grid">
+        ${EMOJIS.map((e, i) => `<button class="emochip${it.emoji === e ? ' on' : ''}" data-act="emochoose" data-id="${esc(it.id)}" data-emoji="${esc(e)}" aria-label="Use ${esc(e)}">${e}</button>`).join('')}
       </div>
-      <div class="mi-tools">
-        <button class="tool${it.soldOut ? ' sel' : ''}" data-act="sold" data-id="${esc(it.id)}">${it.soldOut ? '💤 Sold out' : '👁️ On sale'}</button>
-        <button class="tool" data-act="photo" data-id="${esc(it.id)}">📷 ${it.img ? 'Replace photo' : 'Add photo'}</button>
-        <span class="tool-sp"></span>
-        <button class="tool" data-act="up" data-id="${esc(it.id)}" aria-label="Move up">↑</button>
-        <button class="tool" data-act="down" data-id="${esc(it.id)}" aria-label="Move down">↓</button>
-        <button class="tool danger" data-act="del" data-id="${esc(it.id)}" aria-label="Delete ${esc(it.name)}">${delLabel}</button>
-      </div>
-      <div class="mi-imgnote">${it.img ? (it.img.startsWith('/') ? 'photo saved ✓' : 'stock photo') : 'no photo'}</div>
+      <button class="sh-aux" data-act="emoclose">Close</button>
     </div>`;
 }
 
@@ -451,6 +527,12 @@ async function save() {
       : 'Resolve the conflict banner first.');
     return;
   }
+  if (state.saving) return; // one PUT at a time; a queued one follows anyway
+  if (state.autosaveTimer) { clearTimeout(state.autosaveTimer); state.autosaveTimer = null; }
+  state.saving = true;
+  setMsg('⏳ Saving…');
+  const saveBtn = rootEl ? rootEl.querySelector('[data-act="save"]') : null;
+  if (saveBtn) saveBtn.classList.add('saving');
   const rev = state.menu.rev;
   const res = await fetch(`${API}/v1/menu`, {
     method: 'PUT',
@@ -461,6 +543,8 @@ async function save() {
   try { data = await res.json(); } catch (e) { data = null; }
   if (res.status === 401) { sessionExpired(); return; }
   if (!res.ok) {
+    state.saving = false;
+    if (saveBtn) saveBtn.classList.remove('saving');
     if (res.status === 409) {
       state.conflict = true;
       renderTab();
@@ -473,9 +557,12 @@ async function save() {
   const newRev = data && typeof data.rev === 'number' ? data.rev : rev + 1;
   state.menu = { rev: newRev, tables: (data && data.tables) != null ? data.tables : state.menu.tables, items: (data && Array.isArray(data.items) ? data.items : state.menu.items) };
   state.conflict = false;
+  const when = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   clearDraft();
+  state.saving = false;
+  if (saveBtn) saveBtn.classList.remove('saving');
   renderTab();
-  setMsg('Saved! Menu is live ✓');
+  setMsg(`✓ Live at ${when}`);
 }
 
 async function discardDraftAndReload() {
@@ -590,8 +677,16 @@ function undoDelete() {
 function moveItem(id, dir) {
   const items = state.menu ? state.menu.items : [];
   const i = items.findIndex((x) => x.id === id);
-  const j = dir === 'up' ? i - 1 : i + 1;
-  if (i < 0 || j < 0 || j >= items.length) return;
+  if (i < 0) return;
+  // fine-tune inside the dish's own section: find the next item in the same
+  // menu group (in either direction); a section-hopping edit is done via the
+  // section select on the card instead.
+  const slot = items[i].menu;
+  const sameSlot = items.map((it, idx) => ({ it, idx })).filter(({ it }) => it.menu === slot);
+  const pos = sameSlot.findIndex(({ it }) => it.id === id);
+  const dest = sameSlot[dir === 'up' ? pos - 1 : pos + 1];
+  if (!dest || dest.idx === i) return;
+  const j = dest.idx;
   [items[i], items[j]] = [items[j], items[i]];
   renderTab();
   saveDraft();
@@ -643,6 +738,38 @@ export async function init() {
     const act = btn.dataset.act;
     if (act === 'dismissmsg') { setMsg(''); return; }
     if (!state.token) return;
+    if (act === 'sort') {
+      state.sortBy = btn.dataset.key;
+      renderTab();
+      return;
+    }
+    if (act === 'emopick') {
+      state.emojiFor = btn.dataset.id;
+      const it = itemById(btn.dataset.id);
+      if (it) refreshCard(it);
+      return;
+    }
+    if (act === 'emochoose') {
+      const id = btn.dataset.id;
+      const it = itemById(id);
+      state.emojiFor = null;
+      if (it) {
+        if (!/^(\p{Extended_Pictographic}|\u20e3)+$/u.test(btn.dataset.emoji || '')) {
+          setMsg('That does not look like an emoji — pick one from the grid');
+          renderTab();
+          return;
+        }
+        it.emoji = String(btn.dataset.emoji);
+        refreshCard(it);
+        saveDraft();
+      }
+      return;
+    }
+    if (act === 'emoclose') {
+      state.emojiFor = null;
+      renderTab();
+      return;
+    }
     if (act === 'logout') { await logout(); return; }
     if (act === 'tab') {
       if (state.tab !== btn.dataset.key) {
