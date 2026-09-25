@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,10 +12,14 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
+
+var errMenuConflict = errors.New("menu changed elsewhere — reload and try again")
 
 const (
 	maxImageBytes  = 400 << 10 // 400 KB per photo
@@ -28,6 +33,8 @@ const (
 var (
 	validMenuSlot    = regexp.MustCompile(`^(breakfast|lunch|dinner|midnight|allday)$`)
 	validImageName   = regexp.MustCompile(`^[a-f0-9]{16}\.(jpg|png)$`)
+	validImageRef    = regexp.MustCompile(`^/v1/img/[a-f0-9]{16}\.(jpg|png)$`)
+	validStockRef    = regexp.MustCompile(`^images/[a-z0-9_-]+\.(png|jpe?g|webp|svg)$`)
 	validOrderStatus = regexp.MustCompile(`^(cooking|completed)$`)
 )
 
@@ -44,6 +51,7 @@ type MenuItem struct {
 }
 
 type Menu struct {
+	Rev    int        `json:"rev"`
 	Tables int        `json:"tables"`
 	Items  []MenuItem `json:"items"`
 }
@@ -97,11 +105,27 @@ func (j *jsonDoc) writeLocked(v any) error {
 	if err != nil {
 		return err
 	}
+	if cur, rerr := os.ReadFile(j.path); rerr == nil {
+		// rotate: keep two generations of the previous file
+		_ = os.Rename(j.path+".bak", j.path+".bak2")
+		_ = os.WriteFile(j.path+".bak", cur, 0o600)
+	}
 	tmp := j.path + ".tmp"
 	if err := os.WriteFile(tmp, b, 0o600); err != nil {
 		return err
 	}
 	return os.Rename(tmp, j.path)
+}
+
+func (j *jsonDoc) readBackup(v any) error {
+	b, err := os.ReadFile(j.path + ".bak")
+	if err != nil {
+		b, err = os.ReadFile(j.path + ".bak2")
+		if err != nil {
+			return err
+		}
+	}
+	return json.Unmarshal(b, v)
 }
 
 // ---------- menu store ----------
@@ -147,8 +171,11 @@ func (m *Menu) normalize() error {
 		if strings.TrimSpace(it.Name) == "" {
 			return fmt.Errorf("item %s missing name", it.ID)
 		}
-		if len(it.Name) > 40 || len(it.Desc) > 120 || len(it.Emoji) > 8 {
+		if len(it.Name) > 40 || len(it.Desc) > 120 {
 			return fmt.Errorf("item %s text too long", it.ID)
+		}
+		if utf8.RuneCountInString(it.Emoji) > 8 {
+			return fmt.Errorf("item %s emoji too long", it.ID)
 		}
 		if it.Price < 0 || it.Price > 100000 {
 			return fmt.Errorf("item %s price out of range", it.ID)
@@ -156,25 +183,46 @@ func (m *Menu) normalize() error {
 		if !validMenuSlot.MatchString(it.Menu) {
 			return fmt.Errorf("item %s bad menu slot %q", it.ID, it.Menu)
 		}
+		if it.Img != "" && !validImageRef.MatchString(it.Img) && !validStockRef.MatchString(it.Img) {
+			return fmt.Errorf("item %s bad image ref %q", it.ID, it.Img)
+		}
 	}
 	sort.SliceStable(m.Items, func(i, j int) bool { return m.Items[i].Sort < m.Items[j].Sort })
 	return nil
 }
 
-func (s *menuStore) get() (Menu, error) {
+func (s *menuStore) stored() (Menu, error) {
 	var m Menu
-	if err := s.doc.read(&m); err == nil {
-		return m, nil
+	if err := s.doc.read(&m); err != nil {
+		if os.IsNotExist(err) {
+			return Menu{}, nil // fresh install, rev 0
+		}
+		if berr := s.doc.readBackup(&m); berr == nil {
+			return m, nil
+		}
+		return Menu{}, fmt.Errorf("menu data unreadable: %w", err)
 	}
-	return Menu{}, s.doc.write(Menu{}) // seed empty on first read
+	return m, nil
 }
 
-func (s *menuStore) update(m Menu) (Menu, error) {
+func (s *menuStore) get() (Menu, error) {
+	return s.stored()
+}
+
+func (s *menuStore) update(m Menu, ifMatch int) (Menu, error) {
 	if err := m.normalize(); err != nil {
 		return Menu{}, err
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	cur, err := s.stored()
+	if err != nil {
+		return Menu{}, err
+	}
+	if cur.Rev != ifMatch {
+		return Menu{}, errMenuConflict
+	}
+	m.Rev = cur.Rev + 1
 	if err := s.doc.writeLocked(m); err != nil {
 		return Menu{}, err
 	}
@@ -276,9 +324,11 @@ func (o *orderStore) setStatus(id, status string) (Order, error) {
 		return Order{}, err
 	}
 	found := false
+	updated := Order{}
 	for i, ord := range all {
 		if ord.ID == id {
 			all[i].Status = status
+			updated = all[i]
 			found = true
 			break
 		}
@@ -289,7 +339,7 @@ func (o *orderStore) setStatus(id, status string) (Order, error) {
 	if err := o.doc.writeLocked(all); err != nil {
 		return Order{}, err
 	}
-	return all[0], nil // caller only needs ok; return list head
+	return updated, nil
 }
 
 // ---------- handlers ----------
@@ -308,13 +358,22 @@ func (s *apiServer) handleMenu(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, http.StatusUnauthorized, "login first")
 			return
 		}
+		ifMatch, perr := strconv.Atoi(strings.TrimSpace(r.Header.Get("If-Match")))
+		if perr != nil {
+			writeErr(w, http.StatusPreconditionRequired, "send If-Match: <rev> from GET /v1/menu")
+			return
+		}
 		var m Menu
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 256<<10)).Decode(&m); err != nil {
 			writeErr(w, http.StatusBadRequest, "bad menu body")
 			return
 		}
-		saved, err := s.menu.update(m)
+		saved, err := s.menu.update(m, ifMatch)
 		if err != nil {
+			if errors.Is(err, errMenuConflict) {
+				writeErr(w, http.StatusConflict, err.Error())
+				return
+			}
 			writeErr(w, http.StatusBadRequest, err.Error())
 			return
 		}

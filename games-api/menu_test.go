@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -34,6 +36,10 @@ func newTestServer(t *testing.T, pin string) *apiServer {
 }
 
 func do(t *testing.T, s *apiServer, method, path string, token string, body any) *httptest.ResponseRecorder {
+	return doMatch(t, s, method, path, token, body, "")
+}
+
+func doMatch(t *testing.T, s *apiServer, method, path string, token string, body any, ifMatch string) *httptest.ResponseRecorder {
 	t.Helper()
 	var buf bytes.Buffer
 	if body != nil {
@@ -45,9 +51,26 @@ func do(t *testing.T, s *apiServer, method, path string, token string, body any)
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
+	if ifMatch != "" {
+		req.Header.Set("If-Match", ifMatch)
+	}
 	rr := httptest.NewRecorder()
 	s.handleMenu(rr, req)
 	return rr
+}
+
+// menuRev fetches the current menu revision via the public GET.
+func menuRev(t *testing.T, s *apiServer) int {
+	t.Helper()
+	rr := do(t, s, http.MethodGet, "/v1/menu", "", nil)
+	if rr.Code != 200 {
+		t.Fatalf("menuRev: %d", rr.Code)
+	}
+	var m Menu
+	if err := json.Unmarshal(rr.Body.Bytes(), &m); err != nil {
+		t.Fatal(err)
+	}
+	return m.Rev
 }
 
 func code(t *testing.T, rr *httptest.ResponseRecorder) int {
@@ -92,7 +115,7 @@ func TestMenuUpdateRoundTrip(t *testing.T) {
 		{ID: "bagel", Name: "Bagel", Price: 20, Menu: "breakfast", Sort: 1},
 		{ID: "cheese", Name: "Cheese", Price: 13, Menu: "allday", Sort: 0},
 	}}
-	rr := do(t, s, http.MethodPut, "/v1/menu", tok, m)
+	rr := doMatch(t, s, http.MethodPut, "/v1/menu", tok, m, strconv.Itoa(menuRev(t, s)))
 	if code(t, rr) != 200 {
 		t.Fatalf("put: %d %s", rr.Code, rr.Body.String())
 	}
@@ -101,6 +124,34 @@ func TestMenuUpdateRoundTrip(t *testing.T) {
 	_ = json.Unmarshal(rr.Body.Bytes(), &got)
 	if got.Tables != 8 || len(got.Items) != 2 || got.Items[0].ID != "cheese" {
 		t.Fatalf("round trip wrong: %+v", got)
+	}
+	if got.Rev != 1 {
+		t.Fatalf("expected rev to bump to 1, got %d", got.Rev)
+	}
+}
+
+func TestMenuConflictRejected(t *testing.T) {
+	s := newTestServer(t, "x")
+	tok := tokenFor(t, s)
+	m := Menu{Tables: 4, Items: []MenuItem{{ID: "a", Name: "A", Price: 5, Menu: "allday"}}}
+	// stale If-Match (rev 5, current 0) → conflict
+	rr := doMatch(t, s, http.MethodPut, "/v1/menu", tok, m, "5")
+	if code(t, rr) != 409 {
+		t.Fatalf("expected 409 conflict, got %d", rr.Code)
+	}
+	// missing If-Match → 428
+	rr = do(t, s, http.MethodPut, "/v1/menu", tok, m)
+	if code(t, rr) != http.StatusPreconditionRequired {
+		t.Fatalf("expected 428 missing If-Match, got %d", rr.Code)
+	}
+	// correct rev → ok, then the SAME rev again → conflict (someone else saved)
+	rr = doMatch(t, s, http.MethodPut, "/v1/menu", tok, m, strconv.Itoa(menuRev(t, s)))
+	if code(t, rr) != 200 {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+	rr = doMatch(t, s, http.MethodPut, "/v1/menu", tok, m, "0")
+	if code(t, rr) != 409 {
+		t.Fatalf("expected 409 on stale second save, got %d", rr.Code)
 	}
 }
 
@@ -121,13 +172,65 @@ func TestMenuNormalizeRejects(t *testing.T) {
 		{"dup id", Menu{Tables: 2, Items: []MenuItem{{ID: "a", Name: "A", Menu: "allday"}, {ID: "a", Name: "B", Menu: "allday"}}}},
 		{"too many tables", Menu{Tables: 999}},
 		{"no name", Menu{Tables: 2, Items: []MenuItem{{ID: "a", Name: "  ", Menu: "allday"}}}},
+		{"bad img ref", Menu{Tables: 2, Items: []MenuItem{{ID: "a", Name: "A", Menu: "allday", Img: "https://evil.example/x.png"}}}},
+		{"img traversal", Menu{Tables: 2, Items: []MenuItem{{ID: "a", Name: "A", Menu: "allday", Img: "images/../../etc/passwd"}}}},
 	}
 	s := newTestServer(t, "x")
 	tok := tokenFor(t, s)
-	for _, tc := range cases {
-		if rr := do(t, s, http.MethodPut, "/v1/menu", tok, tc.menu); code(t, rr) != 400 {
+	rev := menuRev(t, s)
+	for i, tc := range cases {
+		_ = i
+		if rr := doMatch(t, s, http.MethodPut, "/v1/menu", tok, tc.menu, strconv.Itoa(rev)); code(t, rr) != 400 {
 			t.Fatalf("%s: expected 400, got %d", tc.name, rr.Code)
 		}
+	}
+	// valid refs accepted: stock + uploaded forms
+	ok := Menu{Tables: 2, Items: []MenuItem{
+		{ID: "a", Name: "A", Menu: "allday", Img: "images/cream.png"},
+		{ID: "b", Name: "B", Menu: "allday", Img: "/v1/img/8c01c2eb16c4dedb.jpg"},
+	}}
+	if rr := doMatch(t, s, http.MethodPut, "/v1/menu", tok, ok, strconv.Itoa(menuRev(t, s))); code(t, rr) != 200 {
+		t.Fatalf("valid refs rejected: %d %s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestMenuSurvivesCorruptFile(t *testing.T) {
+	s := newTestServer(t, "x")
+	tok := tokenFor(t, s)
+	m := Menu{Tables: 3, Items: []MenuItem{{ID: "a", Name: "A", Price: 2, Menu: "allday"}}}
+	if rr := doMatch(t, s, http.MethodPut, "/v1/menu", tok, m, strconv.Itoa(menuRev(t, s))); code(t, rr) != 200 {
+		t.Fatalf("seed save failed: %d", rr.Code)
+	}
+	// second save rotates the first into .bak
+	m.Tables = 5
+	if rr := doMatch(t, s, http.MethodPut, "/v1/menu", tok, m, strconv.Itoa(menuRev(t, s))); code(t, rr) != 200 {
+		t.Fatalf("second save failed: %d", rr.Code)
+	}
+	// corrupt the live file; the rotated .bak must rescue it (one save back)
+	if err := os.WriteFile(s.menu.doc.path, []byte("{corrupt"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.menu.get()
+	if err != nil {
+		t.Fatalf("get after corruption: %v", err)
+	}
+	if got.Tables != 3 || len(got.Items) != 1 {
+		t.Fatalf("expected .bak rescue, got %+v", got)
+	}
+	// corrupt with NO backup: get() must error, never return empty-and-wipe
+	dir := t.TempDir()
+	m2, err := newMenuStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "menu.json"), []byte("{corrupt"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m2.get(); err == nil {
+		t.Fatal("expected error for corrupt file with no backup, got nil")
+	}
+	if b, rerr := os.ReadFile(filepath.Join(dir, "menu.json")); rerr != nil || string(b) != "{corrupt" {
+		t.Fatal("get() must never overwrite a corrupt file it cannot read")
 	}
 }
 
@@ -209,7 +312,7 @@ func TestOrderCreateHappyPath(t *testing.T) {
 	_, err := s.menu.update(Menu{Tables: 6, Items: []MenuItem{
 		{ID: "cheese", Name: "Cheese", Price: 13, Menu: "allday"},
 		{ID: "bagel", Name: "Bagel", Price: 20, Menu: "breakfast", SoldOut: true},
-	}})
+	}}, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -259,7 +362,7 @@ func TestOrderCreateHappyPath(t *testing.T) {
 
 func TestOrderDefaultTablesWhenUnconfigured(t *testing.T) {
 	s := newTestServer(t, "x")
-	_, _ = s.menu.update(Menu{Tables: 0, Items: []MenuItem{{ID: "a", Name: "A", Price: 5, Menu: "allday"}}})
+	_, _ = s.menu.update(Menu{Tables: 0, Items: []MenuItem{{ID: "a", Name: "A", Price: 5, Menu: "allday"}}}, 0)
 	rr := postOrder(t, s, map[string]any{"table": 10, "items": []map[string]any{{"id": "a", "qty": 1}}, "pay": "cash"})
 	if code(t, rr) != 200 {
 		t.Fatalf("unconfigured tables should still accept table 10 (default), got %d", rr.Code)
@@ -273,7 +376,7 @@ func TestOrderDefaultTablesWhenUnconfigured(t *testing.T) {
 func TestOrderStatusTransition(t *testing.T) {
 	s := newTestServer(t, "x")
 	tok := tokenFor(t, s)
-	_, _ = s.menu.update(Menu{Tables: 4, Items: []MenuItem{{ID: "a", Name: "A", Price: 5, Menu: "allday"}}})
+	_, _ = s.menu.update(Menu{Tables: 4, Items: []MenuItem{{ID: "a", Name: "A", Price: 5, Menu: "allday"}}}, 0)
 	rr := postOrder(t, s, map[string]any{"table": 2, "items": []map[string]any{{"id": "a", "qty": 1}}, "pay": "cash"})
 	var ord Order
 	_ = json.Unmarshal(rr.Body.Bytes(), &ord)
@@ -284,7 +387,7 @@ func TestOrderStatusTransition(t *testing.T) {
 	if rec0.Code != 401 {
 		t.Fatalf("list: expected 401, got %d", rec0.Code)
 	}
-	// advance twice
+	// advance twice; each response must be the UPDATED order itself
 	for _, want := range []string{"cooking", "completed"} {
 		req := httptest.NewRequest(http.MethodPost, "/v1/orders/status", bytes.NewBufferString(`{"id":"`+ord.ID+`","status":"`+want+`"}`))
 		req.Header.Set("Authorization", "Bearer "+tok)
@@ -292,6 +395,13 @@ func TestOrderStatusTransition(t *testing.T) {
 		s.handleOrderStatus(rec, req)
 		if rec.Code != 200 {
 			t.Fatalf("status %s: %d", want, rec.Code)
+		}
+		var updated Order
+		if err := json.Unmarshal(rec.Body.Bytes(), &updated); err != nil {
+			t.Fatal(err)
+		}
+		if updated.ID != ord.ID || updated.Status != want {
+			t.Fatalf("status response wrong: want %s/%s got %s/%s", ord.ID, want, updated.ID, updated.Status)
 		}
 	}
 	// back to pending rejected
@@ -328,5 +438,110 @@ func TestCompletedOrdersOnly24h(t *testing.T) {
 	}
 	if len(got) != 2 || got[0].ID != "recent-done" || got[1].ID != "fresh" {
 		t.Fatalf("expiry wrong: %+v", got)
+	}
+}
+
+func TestTokenExpiryAndRevocation(t *testing.T) {
+	dir := t.TempDir()
+	ts, err := newTokenStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tok, _ := newToken()
+	if err := ts.add(tok); err != nil {
+		t.Fatal(err)
+	}
+	if !ts.valid(tok) {
+		t.Fatal("fresh token must be valid")
+	}
+	// expire it manually
+	ts.mu.Lock()
+	ts.cache[hashToken(tok)] = time.Now().Add(-time.Minute).Unix()
+	ts.mu.Unlock()
+	if ts.valid(tok) {
+		t.Fatal("expired token must not validate")
+	}
+	// revocation
+	tok2, _ := newToken()
+	_ = ts.add(tok2)
+	ts.revoke(tok2)
+	if ts.valid(tok2) {
+		t.Fatal("revoked token must not validate")
+	}
+}
+
+func TestLogoutRevokesServerSide(t *testing.T) {
+	s := newTestServer(t, "x")
+	tok := tokenFor(t, s)
+	if !s.tokens.valid(tok) {
+		t.Fatal("precondition: token valid after login")
+	}
+	req := httptest.NewRequest(http.MethodPost, "/v1/logout", nil)
+	req.Header.Set("Authorization", "Bearer "+tok)
+	rec := httptest.NewRecorder()
+	s.handleLogout(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("logout: %d", rec.Code)
+	}
+	if s.tokens.valid(tok) {
+		t.Fatal("token must be revoked server-side after logout")
+	}
+	// admin write with revoked token now fails
+	rr := doMatch(t, s, http.MethodPut, "/v1/menu", tok, Menu{Tables: 1}, "0")
+	if code(t, rr) != 401 {
+		t.Fatalf("revoked token write: expected 401, got %d", rr.Code)
+	}
+}
+
+func TestLegacyTokenFormatDropped(t *testing.T) {
+	dir := t.TempDir()
+	legacy := []string{"deadbeef"}
+	b, _ := json.Marshal(legacy)
+	if err := os.WriteFile(filepath.Join(dir, "tokens.json"), b, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ts, err := newTokenStore(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ts.valid("deadbeef") {
+		t.Fatal("legacy (no-expiry) tokens must be dropped, not honored")
+	}
+}
+
+func TestLoginBodyLimit(t *testing.T) {
+	s := newTestServer(t, "x")
+	big := bytes.Repeat([]byte("a"), 64<<10)
+	req := httptest.NewRequest(http.MethodPost, "/v1/login", bytes.NewReader(big))
+	rec := httptest.NewRecorder()
+	s.handleLogin(rec, req)
+	if rec.Code != 400 {
+		t.Fatalf("oversized login body: expected 400, got %d", rec.Code)
+	}
+}
+
+func TestClientIPPrefersCFHeader(t *testing.T) {
+	s := newTestServer(t, "x")
+	// 5 wrong PINs from CF-Connecting-IP 9.9.9.9 must lock that IP out...
+	for i := 0; i < 5; i++ {
+		req := httptest.NewRequest(http.MethodPost, "/v1/login", bytes.NewBufferString(`{"pin":"wrong"}`))
+		req.Header.Set("CF-Connecting-IP", "9.9.9.9")
+		rec := httptest.NewRecorder()
+		s.handleLogin(rec, req)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/v1/login", bytes.NewBufferString(`{"pin":"wrong"}`))
+	req.Header.Set("CF-Connecting-IP", "9.9.9.9")
+	rec := httptest.NewRecorder()
+	s.handleLogin(rec, req)
+	if rec.Code != 429 {
+		t.Fatalf("expected 429 for locked-out CF IP, got %d", rec.Code)
+	}
+	// ...while a different real IP is NOT locked out by the shared tunnel addr
+	req2 := httptest.NewRequest(http.MethodPost, "/v1/login", bytes.NewBufferString(`{"pin":"wrong"}`))
+	req2.Header.Set("CF-Connecting-IP", "8.8.8.8")
+	rec2 := httptest.NewRecorder()
+	s.handleLogin(rec2, req2)
+	if rec2.Code != 401 {
+		t.Fatalf("other IP must be independent, got %d", rec2.Code)
 	}
 }

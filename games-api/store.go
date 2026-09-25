@@ -163,22 +163,29 @@ func (f *fileStore) saveLocked(st State) error {
 }
 
 type tokenStore struct {
-	mu    sync.Mutex
-	path  string
-	cache map[string]bool
+	mu      sync.Mutex
+	path    string
+	cache   map[string]int64 // sha256(token) -> expires unix
+	fallback map[string]bool // pre-TTL tokens from the old format: treated as expired
 }
+
+const tokenTTL = 30 * 24 * time.Hour
 
 func newTokenStore(dataDir string) (*tokenStore, error) {
 	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		return nil, err
 	}
-	ts := &tokenStore{path: filepath.Join(dataDir, "tokens.json"), cache: map[string]bool{}}
+	ts := &tokenStore{path: filepath.Join(dataDir, "tokens.json"), cache: map[string]int64{}}
 	b, err := os.ReadFile(ts.path)
 	if err == nil {
-		var toks []string
+		var toks map[string]int64
 		if json.Unmarshal(b, &toks) == nil {
-			for _, t := range toks {
-				ts.cache[t] = true
+			ts.cache = toks
+		} else {
+			var legacy []string
+			if json.Unmarshal(b, &legacy) == nil {
+				// old format had no expiry: drop (forces one clean re-login)
+				_ = os.Rename(ts.path, ts.path+".legacy")
 			}
 		}
 	}
@@ -193,10 +200,36 @@ func hashToken(tok string) string {
 func (ts *tokenStore) add(tok string) error {
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
-	ts.cache[hashToken(tok)] = true
-	toks := make([]string, 0, len(ts.cache))
-	for t := range ts.cache {
-		toks = append(toks, t)
+	ts.cache[hashToken(tok)] = time.Now().Add(tokenTTL).Unix()
+	return ts.saveLocked()
+}
+
+func (ts *tokenStore) revoke(tok string) {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+	delete(ts.cache, hashToken(tok))
+	_ = ts.saveLocked()
+}
+
+func (ts *tokenStore) valid(tok string) bool {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+	exp, ok := ts.cache[hashToken(tok)]
+	if !ok {
+		return false
+	}
+	if time.Now().Unix() > exp {
+		delete(ts.cache, hashToken(tok))
+		_ = ts.saveLocked()
+		return false
+	}
+	return true
+}
+
+func (ts *tokenStore) saveLocked() error {
+	toks := make(map[string]int64, len(ts.cache))
+	for k, v := range ts.cache {
+		toks[k] = v
 	}
 	b, err := json.Marshal(toks)
 	if err != nil {
@@ -207,12 +240,6 @@ func (ts *tokenStore) add(tok string) error {
 		return err
 	}
 	return os.Rename(tmp, ts.path)
-}
-
-func (ts *tokenStore) valid(tok string) bool {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
-	return ts.cache[hashToken(tok)]
 }
 
 func newToken() (string, error) {

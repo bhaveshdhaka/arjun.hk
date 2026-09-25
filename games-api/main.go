@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -50,6 +51,18 @@ func (l *loginLimiter) reset(ip string) {
 }
 
 func clientIP(r *http.Request) string {
+	// The service is only reachable through the cloudflared tunnel, which
+	// sets CF-Connecting-IP to the real visitor address. RemoteAddr here is
+	// the tunnel itself — one shared IP for the whole world.
+	if ip := r.Header.Get("CF-Connecting-IP"); ip != "" {
+		return ip
+	}
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		if i := strings.IndexByte(xff, ','); i > 0 {
+			xff = xff[:i]
+		}
+		return strings.TrimSpace(xff)
+	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		return r.RemoteAddr
@@ -96,7 +109,7 @@ func (s *apiServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Pin string `json:"pin"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Pin == "" {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body); err != nil || body.Pin == "" {
 		writeErr(w, http.StatusBadRequest, "send {\"pin\": \"...\"}")
 		return
 	}
@@ -116,6 +129,19 @@ func (s *apiServer) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"token": tok})
+}
+
+func (s *apiServer) handleLogout(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	const prefix = "Bearer "
+	authz := r.Header.Get("Authorization")
+	if len(authz) > len(prefix) && authz[:len(prefix)] == prefix {
+		s.tokens.revoke(authz[len(prefix):])
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"ok": "true"})
 }
 
 func (s *apiServer) auth(r *http.Request) bool {
@@ -208,6 +234,7 @@ func main() {
 		writeJSON(w, http.StatusOK, map[string]string{"service": "arjun-games-api", "ok": "true"})
 	})
 	mux.HandleFunc("/v1/login", withCORS(srv.handleLogin))
+	mux.HandleFunc("/v1/logout", withCORS(srv.handleLogout))
 	mux.HandleFunc("/v1/state", withCORS(srv.handleState))
 	mux.HandleFunc("/v1/sync", withCORS(srv.handleSync))
 	mux.HandleFunc("/v1/menu", withCORS(srv.handleMenu))

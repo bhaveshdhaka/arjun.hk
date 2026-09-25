@@ -400,13 +400,14 @@ async function bootGuest({ storage = null, seed = null, search = '' } = {}) {
   return { doc, root: doc.getElementById('menuRoot'), store, timers };
 }
 
-async function bootAdmin({ storage = null, menu = null, orders = [] } = {}) {
+async function bootAdmin({ storage = null, menu = null, orders = [], extraRoutes = [], seedToken = null } = {}) {
   const bootId = `a${++bootN}`;
   const doc = new Document();
   const store = storage || new MemStorage();
   const timers = new FakeTimers();
   parsePage(doc, src('admin.html'));
   doc.documentElement.dataset.theme = 'light';
+  if (seedToken) store.setItem('menu.adminToken', JSON.stringify(seedToken));
   globalThis.localStorage = store;
   globalThis.document = doc;
   globalThis.location = { search: '' };
@@ -416,6 +417,7 @@ async function bootAdmin({ storage = null, menu = null, orders = [] } = {}) {
   apiCalls = [];
   const myOrders = orders.map((o) => ({ ...o }));
   globalThis.fetch = makeFetch([
+    ...extraRoutes,
     {
       method: 'GET', part: '/v1/menu',
       respond: () => ({ status: 200, json: menu || {
@@ -438,6 +440,10 @@ async function bootAdmin({ storage = null, menu = null, orders = [] } = {}) {
           ? { status: 200, json: { token: 'admintok' } }
           : { status: 401, json: { error: 'wrong pin' } };
       },
+    },
+    {
+      method: 'POST', part: '/v1/logout',
+      respond: () => { apiCalls.push(['logout', null]); return { status: 200, json: { ok: 'true' } }; },
     },
     {
       method: 'GET', part: '/v1/orders',
@@ -667,6 +673,172 @@ async function s24_menu_dead_buttons() {
   MENU_OK(adminEmit.length > 0 && unhandled2.length === 0, `admin: dead-button inventory (${adminEmit.length} emitted, ${unhandled2.length} unhandled)`);
 }
 
+async function s25_admin_delete_confirm_undo() {
+  const { root, doc, timers } = await bootAdmin({});
+  querySelector(doc, '#pinInput').value = '4321';
+  dispatch(querySelector(doc, '#pinForm'), 'submit');
+  await tick2();
+  await tick2();
+  const firstName = querySelectorAll(root, '.mi')[0].dataset.mi;
+  const delBtn = () => querySelectorAll(root, '.mi')[0].querySelector('[data-act="del"]');
+  dispatch(delBtn(), 'click');
+  MENU_OK(querySelectorAll(root, '.mi').length === 2, 'delete: first tap does NOT delete');
+  MENU_OK(delBtn().textContent === 'Sure?', 'delete: first tap asks for confirmation');
+  dispatch(delBtn(), 'click');
+  MENU_OK(querySelectorAll(root, '.mi').length === 1, 'delete: second tap deletes');
+  const undoBtn = querySelector(root, '[data-act="undo"]');
+  MENU_OK(!!undoBtn, 'delete: undo offered');
+  dispatch(undoBtn, 'click');
+  MENU_OK(querySelectorAll(root, '.mi').length === 2, 'undo: row restored');
+  MENU_OK(querySelectorAll(root, '.mi')[0].dataset.mi === firstName, 'undo: restored at original position');
+  timers.flush();
+}
+
+async function s26_admin_save_blocked_when_load_fails() {
+  let fails = 0;
+  const { root, doc } = await bootAdmin({
+    extraRoutes: [
+      {
+        method: 'GET', part: '/v1/menu',
+        respond: () => {
+          fails++;
+          return fails === 1 ? { status: 500, json: { error: 'boom' } } : { status: 200, json: { rev: 3, tables: 4, items: [{ id: 'ok', name: 'Ok', emoji: '😀', price: 1, menu: 'allday' }] } };
+        },
+      },
+    ],
+  });
+  querySelector(doc, '#pinInput').value = '4321';
+  dispatch(querySelector(doc, '#pinForm'), 'submit');
+  await tick2();
+  await tick2();
+  MENU_OK(root.textContent.includes("Couldn't load the menu"), 'load-fail: banner explains save is blocked');
+  MENU_OK(querySelector(doc, '[data-act="save"]').attrs.disabled !== undefined, 'load-fail: save disabled');
+  dispatch(querySelector(doc, '[data-act="save"]'), 'click');
+  await tick2();
+  MENU_OK(apiCalls.find(([k]) => k === 'menu-put') === undefined, 'load-fail: no PUT fired while blocked');
+  dispatch(querySelector(doc, '[data-act="reload-menu"]'), 'click');
+  await tick2();
+  MENU_OK(querySelectorAll(root, '.mi').length === 1, 'load-fail: retry loads menu');
+  dispatch(querySelector(doc, '[data-act="save"]'), 'click');
+  await tick2();
+  const put = (apiCalls.find(([k]) => k === 'menu-put') || [])[1];
+  MENU_OK(!!put, 'load-fail: save works after retry');
+  MENU_OK(put && put.rev === undefined && put.tables === 4, 'load-fail: payload from recovered menu');
+}
+
+async function s27_admin_conflict_409_keeps_draft() {
+  let puts = 0;
+  const { root, doc } = await bootAdmin({
+    extraRoutes: [
+      {
+        method: 'GET', part: '/v1/menu',
+        respond: () => ({ status: 200, json: { rev: 7, tables: 12, items: [
+          { id: 'cheese', name: 'Cheese', emoji: '🧀', price: 13, menu: 'allday' },
+          { id: 'bagel', name: 'Bagel', emoji: '🥯', price: 20, menu: 'breakfast' },
+        ] } }),
+      },
+      {
+        method: 'PUT', part: '/v1/menu',
+        respond: ({ body, opts }) => {
+          puts++;
+          apiCalls.push(['menu-put', body, opts.headers]);
+          return puts === 1
+            ? { status: 409, json: { error: 'menu changed elsewhere' } }
+            : { status: 200, json: { ...body, rev: 8 } };
+        },
+      },
+    ],
+  });
+  querySelector(doc, '#pinInput').value = '4321';
+  dispatch(querySelector(doc, '#pinForm'), 'submit');
+  await tick2();
+  await tick2();
+  dispatch(querySelector(doc, '[data-act="additem"]'), 'click');
+  MENU_OK(querySelectorAll(root, '.mi').length === 3, 'conflict: draft row added');
+  dispatch(querySelector(doc, '[data-act="save"]'), 'click');
+  await tick2();
+  MENU_OK(root.textContent.includes('changed on another device'), 'conflict: banner shown on 409');
+  MENU_OK(querySelectorAll(root, '.mi').length === 3, 'conflict: draft kept after 409');
+  const first = apiCalls.filter(([k]) => k === 'menu-put').pop();
+  MENU_OK(first && first[2] && first[2]['If-Match'] === '7', 'conflict: PUT carried If-Match rev');
+  dispatch(querySelector(doc, '[data-act="conflict-overwrite"]'), 'click');
+  await tick2();
+  await tick2();
+  MENU_OK(root.textContent.includes('Saved! Menu is live'), 'conflict: overwrite saves after refresh');
+  const last = apiCalls.filter(([k]) => k === 'menu-put').pop();
+  MENU_OK(last && last[1].items.length === 3, 'conflict: overwrite posts the draft');
+}
+
+async function s28_admin_expired_token_back_to_gate() {
+  const { doc, store } = await bootAdmin({
+    seedToken: 'oldtok',
+    extraRoutes: [
+      {
+        method: 'PUT', part: '/v1/menu',
+        respond: () => ({ status: 401, json: { error: 'login first' } }),
+      },
+    ],
+  });
+  await tick2();
+  await tick2();
+  MENU_OK(!!querySelector(doc, '[data-act="additem"]'), 'expired: seeded token opens admin');
+  dispatch(querySelector(doc, '[data-act="additem"]'), 'click');
+  dispatch(querySelector(doc, '[data-act="save"]'), 'click');
+  await tick2();
+  MENU_OK(!!querySelector(doc, '#pinForm'), 'expired: 401 returns to pin gate');
+  MENU_OK(store.getItem('menu.adminToken') == null, 'expired: dead token cleared');
+  MENU_OK(store.getItem('menu.draft') != null, 'expired: draft kept for re-login');
+}
+
+async function s29_admin_draft_restore() {
+  const storage = new MemStorage();
+  storage.setItem('menu.adminToken', JSON.stringify('admintok'));
+  storage.setItem('menu.draft', JSON.stringify({
+    rev: 0, tables: 12, at: Date.now(),
+    items: [{ id: 'draft1', name: 'Draft Pancake', emoji: '🥞', price: 9, menu: 'breakfast', desc: '', soldOut: false, img: '' }],
+  }));
+  const { root, doc } = await bootAdmin({ storage });
+  await tick2();
+  await tick2();
+  MENU_OK(root.textContent.includes('unsaved draft'), 'draft: offer shown on login');
+  MENU_OK(querySelectorAll(root, '.mi').length === 2, 'draft: server menu shown while offering');
+  dispatch(querySelector(doc, '[data-act="draft-restore"]'), 'click');
+  MENU_OK(querySelectorAll(root, '.mi').length === 1, 'draft: restore swaps in draft items');
+  MENU_OK(querySelector(doc, '.mi').dataset.mi === 'draft1', 'draft: restored item is the draft one');
+  dispatch(querySelector(doc, '[data-act="save"]'), 'click');
+  await tick2();
+  const put = (apiCalls.find(([k]) => k === 'menu-put') || [])[1];
+  MENU_OK(put && put.items.length === 1 && put.items[0].id === 'draft1', 'draft: saving posts restored draft');
+}
+
+async function s30_admin_price_and_emoji_sane() {
+  const { root, doc } = await bootAdmin({});
+  querySelector(doc, '#pinInput').value = '4321';
+  dispatch(querySelector(doc, '#pinForm'), 'submit');
+  await tick2();
+  await tick2();
+  const row = querySelectorAll(root, '.mi')[0];
+  const price = row.querySelector('[data-field="price"]');
+  price.value = '12a';
+  dispatch(price, 'input');
+  dispatch(price, 'focusout');
+  MENU_OK(querySelectorAll(root, '.mi')[0].querySelector('[data-field="price"]').value === '12', 'price: non-digits stripped, normalized on blur');
+  price.value = '';
+  dispatch(price, 'input');
+  dispatch(price, 'focusout');
+  MENU_OK(querySelectorAll(root, '.mi')[0].querySelector('[data-field="price"]').value === '0', 'price: empty becomes 0, shown honestly');
+  price.value = '99999';
+  dispatch(price, 'input');
+  dispatch(price, 'focusout');
+  MENU_OK(querySelectorAll(root, '.mi')[0].querySelector('[data-field="price"]').value === '1000', 'price: clamped at 1000');
+  const emoji = querySelectorAll(root, '.mi')[0].querySelector('[data-field="emoji"]');
+  emoji.value = '👨‍👩‍👧‍👧xxx';
+  dispatch(emoji, 'input');
+  dispatch(emoji, 'focusout');
+  const got = Array.from(querySelectorAll(root, '.mi')[0].querySelector('[data-field="emoji"]').value);
+  MENU_OK(got.length <= 8 && got.every((c) => { const cp = c.codePointAt(0); return cp < 0xD800 || cp > 0xDFFF; }), 'emoji: capped at 8 codepoints, no lone surrogates');
+}
+
 const scenarios = [
   s1_intro_fresh, s2_full_session, s3_wrong_tip_and_continue, s4_typein_and_toggle,
   s5_wrong_pin_guest_isolation, s6_correct_pin_sync_and_signout,
@@ -676,6 +848,9 @@ const scenarios = [
   s17_guest_menu_renders, s18_guest_qs_preselect, s19_table_cart_send,
   s20_admin_wrong_then_right_pin, s21_admin_menu_edit_and_save,
   s22_admin_tables, s23_admin_orders_flow, s24_menu_dead_buttons,
+  s25_admin_delete_confirm_undo, s26_admin_save_blocked_when_load_fails,
+  s27_admin_conflict_409_keeps_draft, s28_admin_expired_token_back_to_gate,
+  s29_admin_draft_restore, s30_admin_price_and_emoji_sane,
 ];
 for (const s of scenarios) {
   try { await s(); await tick(); await tick(); } catch (e) { fails.push(s.name); console.error(`FAIL - ${s.name} threw: ${(e && e.message) || e}`, String(e.stack || '').split('\n').slice(1, 4).join(' | ')); }
