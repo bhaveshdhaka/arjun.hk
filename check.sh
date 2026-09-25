@@ -59,6 +59,14 @@ if grep -rn -F '☁' games/ index.html admin.html tools/ tests/ 2>/dev/null; the
 fi
 echo "glyph check OK"
 
+# Overlay guard: author CSS (display:flex on .overlay) must never defeat the
+# hidden attribute — otherwise "closed" modals swallow all taps on real
+# browsers (DOM-stub tests can't see CSS, so this is checked here as text).
+for f in index.html admin.html; do
+  grep -q '\[hidden\] { display: none !important; }' "$f" || { echo "MISSING [hidden] guard in $f"; exit 1; }
+done
+echo "hidden guard OK"
+
 # admin.html: same base checks as index.html (it's a root page)
 if [ -f admin.html ]; then
   test -s admin.html || { echo "EMPTY admin.html"; exit 1; }

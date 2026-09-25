@@ -37,6 +37,7 @@
       --toggle-bg: #3a3128ee; --toggle-shadow: #241d18;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    [hidden] { display: none !important; }
     html, body { height: 100%; }
     body {
       font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -372,7 +373,7 @@
       </div>
     </div>
     <a class="games-link" href="games/">🎮 Play games in the Play Room →</a>
-    <footer> Come feed the caterpillar after lunch! 🐛</footer>
+    <footer> Come feed the caterpillar after lunch! 🐛 <a href="/admin.html" style="color:inherit;opacity:.55;text-decoration:underline">staff</a></footer>
   </div>
 
   <!-- online menu: mounts -->
@@ -388,7 +389,7 @@
   <div id="orderSheet" class="sheet" hidden role="dialog" aria-label="Your order"></div>
 
   <script type="module">
-    import { init } from './games/menu/js/menu.js?v=09250742';
+    import { init } from './games/menu/js/menu.js?v=09250821';
     init();
   </script>
 
