@@ -1,4 +1,4 @@
-import { SLOTS, STATE_LABELS, payLabel } from './clock.js?v=09251453';
+import { SLOTS, STATE_LABELS, payLabel } from './clock.js?v=09251504';
 
 const API = 'https://api.arjun.hk';
 export const ACTIONS = ['login', 'logout', 'tab', 'additem', 'del', 'up', 'down', 'sold', 'photo', 'save', 'tables-inc', 'tables-dec', 'ordnext', 'dismissmsg', 'reload-menu', 'draft-restore', 'draft-discard', 'conflict-overwrite', 'conflict-discard', 'undo', 'sort', 'emopick', 'emochoose', 'emoclose'];
@@ -237,7 +237,14 @@ function menuTabHTML() {
       <button class="tool" data-act="conflict-discard">Load theirs</button></div>`;
   }
   const draftNote = state.dirty ? '<div class="mi-imgnote">unsaved edits are drafted on this device ✓</div>' : '';
-  const cards = items.map(cardHTML).join('');
+  // price/name modes present a re-sorted flat list (array untouched until
+  // Save persists the new order); menu mode groups like the guest page.
+  const sorted = state.sortBy === 'price'
+    ? [...items].sort((a, b) => (a.price - b.price) || a.name.localeCompare(b.name))
+    : state.sortBy === 'name'
+      ? [...items].sort((a, b) => a.name.localeCompare(b.name))
+      : items;
+  const cards = sorted.map(cardHTML).join('');
   return `
     ${banner}
     ${toastHTML()}
