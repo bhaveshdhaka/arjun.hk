@@ -198,6 +198,131 @@
     @media (min-width: 769px) {
       .menu { grid-template-columns: repeat(3, 1fr); }
     }
+    /* ---- online menu additions ---- */
+    .menu-section { margin-bottom: 1.2rem; }
+    .menu-section .sec-head, .menu.fixed .sec-head { border: none; }
+    .sec-head {
+      display: flex; align-items: center; gap: .6rem; width: 100%;
+      justify-content: space-between; text-align: left; cursor: pointer;
+      font-family: inherit; color: var(--text);
+      background: var(--chip-bg); border-radius: 1.2rem; padding: .8rem 1.2rem;
+      box-shadow: 0 4px 0 var(--chip-shadow), 0 2px 10px var(--shadow-soft);
+      border: none;
+    }
+    .menu-section.now .sec-head { background: linear-gradient(180deg, #ff8f5e, #ff5e7e); color: #fff; }
+    .menu-section.now .sec-head .sec-hours { color: #fff; opacity: .9; }
+    .sec-title { font-size: clamp(1.15rem, 4.5vw, 1.5rem); font-weight: 900; display: inline-flex; align-items: center; gap: .5rem; }
+    .nowbadge {
+      font-size: .75rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em;
+      background: #ffffff33; border-radius: 999px; padding: .15rem .55rem;
+    }
+    .sec-hours { font-size: .85rem; font-weight: 700; color: var(--text-soft); margin-left: auto; }
+    .sec-chev { font-weight: 900; opacity: .7; }
+    .sec-head[aria-expanded="true"] .sec-chev { transform: rotate(180deg); }
+    .sec-body { padding: .8rem .2rem .2rem; }
+    .menu-section.other .sec-body { opacity: .92; }
+    .card-desc { font-size: .95rem; font-weight: 700; color: var(--text-soft); margin-bottom: .4rem; }
+    .card-emoji { font-size: clamp(3.2rem, 18vw, 4.6rem); line-height: 1.25; margin: .6rem auto .9rem; display:block; width:max-content;max-width:100%; }
+    .card.off { opacity: .55; filter: saturate(.6); }
+    .soldoutbadge {
+      font-weight: 900; color: var(--text-soft); background: var(--price-bg);
+      border-radius: 999px; padding: .55rem 1.1rem; display: inline-block; margin-top: .2rem;
+    }
+    .addbtn, .bigbtn, .paychip, .tablechip, .stepbtn, .tab {
+      font-family: inherit; font-weight: 900; border: none; cursor: pointer;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .addbtn {
+      font-size: 1.05rem; color: #fff;
+      background: linear-gradient(180deg, #ff8f5e, #ff5e7e);
+      border-radius: 999px; padding: .6rem 1.4rem; margin-top: .5rem; min-height: 44px;
+      box-shadow: 0 4px 0 var(--btn-shadow);
+    }
+    .addbtn:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--btn-shadow); }
+    .addbtn.hot { animation: none; }
+    .emptynote { font-weight: 700; color: var(--text-soft); padding: .8rem 1rem; text-align: center; }
+    .emptynote.warn { color: #a33; }
+    /* table + cart floating controls */
+    .tablebar, .cartpill {
+      position: fixed; left: 50%; transform: translateX(-50%); z-index: 30;
+      border: none; cursor: pointer; font-family: inherit;
+      font-size: clamp(.95rem, 3.8vw, 1.1rem); font-weight: 900; color: var(--text);
+      background: var(--chip-bg); border-radius: 999px;
+      box-shadow: 0 4px 0 var(--toggle-shadow), 0 10px 24px var(--shadow-soft);
+      padding: .75rem 1.3rem; min-height: 3rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tablebar { bottom: calc(1rem + env(safe-area-inset-bottom)); }
+    .cartpill { bottom: calc(1rem + env(safe-area-inset-bottom) + 4.4rem); display: none; background: linear-gradient(180deg, #ff8f5e, #ff5e7e); color: #fff; box-shadow: 0 4px 0 var(--btn-shadow), 0 10px 24px var(--shadow-soft); }
+    .cartpill:not(:empty) { display: block; }
+    .overlay {
+      position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center;
+      background: #00000055; backdrop-filter: blur(2px); padding: 1rem;
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
+    .ov-card, .sheet {
+      width: 100%; max-width: 560px; max-height: 78dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      background: var(--card); backdrop-filter: blur(6px); color: var(--text);
+      border-radius: 2rem; padding: 1.3rem 1.2rem;
+      box-shadow: 0 12px 40px var(--shadow-soft), 0 4px 0 var(--shadow-lift);
+      margin-bottom: calc(.5rem + env(safe-area-inset-bottom));
+    }
+    .ov-card { max-height: 70dvh; }
+    .ov-head, .sh-head { font-size: clamp(1.25rem, 5vw, 1.6rem); font-weight: 900; margin-bottom: .8rem; text-align: center; }
+    .tablegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr)); gap: .5rem; margin-bottom: 1rem; }
+    .tablechip {
+      min-height: 3rem; border-radius: 1rem; font-size: 1.15rem; color: var(--text);
+      background: var(--price-bg); box-shadow: 0 3px 0 var(--chip-shadow);
+    }
+    .tablechip.sel { background: linear-gradient(180deg, #ff8f5e, #ff5e7e); color: #fff; box-shadow: 0 3px 0 var(--btn-shadow); }
+    .sh-body.center { text-align: center; }
+    .sentcard { background: var(--card-soft); border-radius: 1.4rem; padding: 1rem; display: grid; gap: .35rem; font-weight: 800; margin-bottom: .8rem; }
+    .cartline {
+      display: flex; align-items: center; gap: .5rem; padding: .55rem 0;
+      border-bottom: 2px dashed color-mix(in srgb, var(--text-soft) 25%, transparent);
+      font-weight: 800;
+    }
+    .cl-emoji { width: 1.8rem; text-align: center; }
+    .cl-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cl-qty { display: inline-flex; align-items: center; gap: .55rem; }
+    .cl-qty b { min-width: 1.4ch; text-align: center; }
+    .cl-price { min-width: 3.2ch; text-align: right; }
+    .stepbtn {
+      min-width: 2.6rem; min-height: 2.6rem; border-radius: .9rem; font-size: 1.15rem;
+      background: var(--price-bg); color: var(--text); box-shadow: 0 3px 0 var(--chip-shadow);
+    }
+    .stepbtn.rm { background: transparent; box-shadow: none; color: var(--text-soft); }
+    .totrow { display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 1.15rem; padding: .7rem .2rem; }
+    .notefield {
+      width: 100%; font-family: inherit; font-size: 1rem; font-weight: 600; color: var(--text);
+      background: var(--card-warm); border: 2px solid transparent; border-radius: 1.2rem;
+      padding: .7rem .9rem; margin-top: .8rem; resize: none;
+    }
+    .notefield:focus { outline: none; border-color: var(--accent); }
+    .notecount { font-size: .78rem; font-weight: 700; color: var(--text-soft); text-align: right; padding-right: .3rem; }
+    .payrow { display: flex; flex-wrap: wrap; gap: .5rem; margin: .8rem 0; }
+    .paychip {
+      font-size: .95rem; color: var(--text); background: var(--price-bg);
+      border-radius: 999px; padding: .55rem 1rem; min-height: 2.8rem;
+      box-shadow: 0 3px 0 var(--chip-shadow);
+    }
+    .paychip.sel { background: linear-gradient(180deg, #ff8f5e, #ff5e7e); color: #fff; box-shadow: 0 3px 0 var(--btn-shadow); }
+    .bigbtn {
+      width: 100%; font-size: 1.15rem; color: #fff; padding: .95rem 1rem; min-height: 3.2rem;
+      background: linear-gradient(180deg, #ff8f5e, #ff5e7e); border-radius: 999px;
+      box-shadow: 0 5px 0 var(--btn-shadow); margin-top: .4rem;
+    }
+    .bigbtn:disabled { opacity: .45; box-shadow: none; cursor: default; }
+    .bigbtn:not(:disabled):active { transform: translateY(2px); box-shadow: 0 3px 0 var(--btn-shadow); }
+    .sh-aux {
+      display: block; width: 100%; margin-top: .6rem; padding: .7rem;
+      font-family: inherit; font-weight: 800; color: var(--text-soft);
+      background: none; border: none; cursor: pointer; touch-action: manipulation;
+    }
+    @media (max-width: 480px) {
+      .tablebar, .cartpill { max-width: 92vw; }
+    }
+
   </style>
 </head>
 <body>
@@ -207,33 +332,7 @@
       <h1>Baby Boy's<br />Restaurant</h1>
       <div class="badge">Now Open! 🎉</div>
     </header>
-    <div class="menu">
-      <div class="card">
-        <img class="card-img" src="images/cheese.png" alt="Cheese plate with grapes" />
-        <div class="card-name">Cheese</div>
-        <div class="card-price">$13 dollarbucks</div>
-      </div>
-      <div class="card">
-        <img class="card-img" src="images/matcha.png" alt="Matcha latte with heart" />
-        <div class="card-name">Matcha</div>
-        <div class="card-price">$16 dollarbucks</div>
-      </div>
-      <div class="card">
-        <img class="card-img" src="images/bagel.png" alt="Bagel with cream cheese" />
-        <div class="card-name">Bagel</div>
-        <div class="card-price">$20 dollarbucks</div>
-      </div>
-      <div class="card">
-        <img class="card-img" src="images/cream.png" alt="Cream tub with knife" />
-        <div class="card-name">Cream</div>
-        <div class="card-price">$19 dollarbucks</div>
-      </div>
-      <div class="card">
-        <img class="card-img" src="images/icecream.png" alt="Chocolate ice cream cone" />
-        <div class="card-name">Ice-Cream</div>
-        <div class="card-price">$18 dollarbucks</div>
-      </div>
-    </div>
+    <div class="menu" id="menuRoot"></div>
     <div class="pay">
       <div class="pay-title">We accept dollarbucks 💳</div>
       <div class="pay-row">
@@ -275,6 +374,24 @@
     <a class="games-link" href="games/">🎮 Play games in the Play Room →</a>
     <footer> Come feed the caterpillar after lunch! 🐛</footer>
   </div>
+
+  <!-- online menu: mounts -->
+  <button id="tableBar" class="tablebar" data-act="table" aria-haspopup="dialog" aria-label="Pick your table number"></button>
+  <button id="cartPill" class="cartpill" data-act="cartbtn" aria-haspopup="dialog" aria-label="Open your order"></button>
+  <div id="tableOverlay" class="overlay" hidden role="dialog" aria-label="Pick your table">
+    <div class="ov-card">
+      <div class="ov-head">🍽️ Which table are you?</div>
+      <div id="tableGrid" class="tablegrid"></div>
+      <button class="sh-aux" data-act="closetable">Close</button>
+    </div>
+  </div>
+  <div id="orderSheet" class="sheet" hidden role="dialog" aria-label="Your order"></div>
+
+  <script type="module">
+    import { init } from './games/menu/js/menu.js?v=09250742';
+    init();
+  </script>
+
   <script>
     (function () {
       var b = document.getElementById('themeToggle');

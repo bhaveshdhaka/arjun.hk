@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#ffe29a" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#2b2118" media="(prefers-color-scheme: dark)" />
+  <title>Kitchen Admin — Baby Boy's Restaurant</title>
+  <script>(function(){var t=null;try{t=localStorage.getItem('theme')}catch(e){}if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light'}document.documentElement.dataset.theme=t})();</script>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg-1: #ffe29a; --bg-2: #ffb3c1; --bg-3: #b2e0ff;
+      --text: #5a3a1a; --text-soft: #7c4a2a;
+      --card: #ffffffdd; --card-soft: #fff0f5; --card-warm: #fff8e8;
+      --chip-shadow: #ffe1ec;
+      --btn-grad-b: #ff5e7e; --btn-shadow: #c9355a;
+      --shadow-soft: #00000022; --shadow-lift: #ffffff88;
+      --accent: #ff5e7e; --price-bg: #fff0f5;
+    }
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --bg-1: #2b2118; --bg-2: #3a2333; --bg-3: #1f2430;
+      --text: #f6ead9; --text-soft: #e0c9a8;
+      --card: #322a24f2; --card-soft: #4a3038; --card-warm: #3d3327;
+      --chip-shadow: #241d18;
+      --btn-shadow: #8f2340;
+      --shadow-soft: #00000066; --shadow-lift: #ffffff14;
+      --price-bg: #4a3038;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 55%, var(--bg-3) 100%);
+      color: var(--text);
+      min-height: 100vh; min-height: 100dvh;
+      padding: calc(1.2rem + env(safe-area-inset-top)) 1rem calc(2rem + env(safe-area-inset-bottom));
+      overscroll-behavior: none;
+      touch-action: manipulation;
+      -webkit-user-select: none; user-select: none;
+    }
+    .container { max-width: 640px; margin: 0 auto; }
+    .center { text-align: center; }
+    .gate-emoji { font-size: 4rem; margin: 1rem 0 .4rem; }
+    .gate-title { font-size: clamp(1.6rem, 7vw, 2.2rem); font-weight: 900; }
+    .gate-sub { font-weight: 700; color: var(--text-soft); margin: .4rem 0 1rem; }
+    .gate-err { font-weight: 800; color: #a33; margin-bottom: .8rem; }
+    .pinfield {
+      width: 100%; font-family: inherit; font-size: 1.35rem; font-weight: 900; letter-spacing: .3em;
+      color: var(--text); text-align: center;
+      background: var(--card-warm); border: 2px solid transparent; border-radius: 1.2rem;
+      padding: .8rem; margin-bottom: .8rem;
+    }
+    .pinfield::placeholder { letter-spacing: .2em; color: var(--text-soft); opacity: .5; }
+    .pinfield:focus { outline: none; border-color: var(--accent); }
+    .bigbtn, .tab, .tool, .chip-alt, .stepbtn, .addbtn {
+      font-family: inherit; font-weight: 900; border: none; cursor: pointer;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .bigbtn {
+      width: 100%; font-size: 1.1rem; color: #fff; padding: .95rem 1rem; min-height: 3.2rem;
+      background: linear-gradient(180deg, #ff8f5e, #ff5e7e); border-radius: 999px;
+      box-shadow: 0 5px 0 var(--btn-shadow); margin: .4rem 0;
+    }
+    .bigbtn:disabled { opacity: .45; box-shadow: none; }
+    .sh-aux {
+      display: inline-block; margin-top: .6rem; padding: .7rem;
+      font-weight: 800; color: var(--text-soft); text-decoration: none;
+    }
+    .ad-head {
+      display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+      margin-bottom: 1rem;
+    }
+    .ad-title { font-size: clamp(1.4rem, 6vw, 1.9rem); font-weight: 900; }
+    .chip-alt {
+      font-size: .95rem; color: var(--text); background: var(--card);
+      border-radius: 999px; padding: .6rem 1.1rem; min-height: 2.8rem;
+      box-shadow: 0 3px 0 var(--chip-shadow);
+    }
+    .tabs { display: flex; gap: .5rem; margin-bottom: 1rem; }
+    .tab {
+      flex: 1; font-size: clamp(.95rem, 3.8vw, 1.1rem); color: var(--text);
+      background: var(--card); border-radius: 1.2rem; padding: .75rem .4rem; min-height: 3rem;
+      box-shadow: 0 3px 0 var(--chip-shadow);
+    }
+    .tab.on { background: linear-gradient(180deg, #ff8f5e, #ff5e7e); color: #fff; box-shadow: 0 3px 0 var(--btn-shadow); }
+    .toast {
+      background: var(--card); border-radius: 1rem; padding: .7rem 1rem;
+      font-weight: 800; margin-bottom: .8rem; box-shadow: 0 3px 0 var(--chip-shadow);
+      cursor: pointer;
+    }
+    .tab-note { font-weight: 700; color: var(--text-soft); margin-bottom: .8rem; }
+    .mi {
+      background: var(--card); border-radius: 1.4rem; padding: .9rem;
+      margin-bottom: .8rem; box-shadow: 0 4px 14px var(--shadow-soft), 0 2px 0 var(--shadow-lift);
+    }
+    .mi-row { display: flex; gap: .5rem; margin-bottom: .5rem; }
+    .mi-row:last-of-type { margin-bottom: .3rem; }
+    .in {
+      font-family: inherit; font-size: 1rem; font-weight: 700; color: var(--text);
+      background: var(--card-warm); border: 2px solid transparent; border-radius: .9rem;
+      padding: .55rem .7rem; min-width: 0;
+    }
+    .in:focus { outline: none; border-color: var(--accent); }
+    .emoji { width: 3.6rem; text-align: center; font-size: 1.2rem; }
+    .name { flex: 1.4; }
+    .price { width: 5.2rem; }
+    .desc { flex: 1.4; }
+    select.slot { flex: 1; font-family: inherit; font-weight: 800; -webkit-appearance: none; }
+    .mi-tools { display: flex; gap: .4rem; align-items: center; }
+    .tool {
+      font-size: .88rem; color: var(--text); background: var(--price-bg);
+      border-radius: 999px; padding: .5rem .8rem; min-height: 2.7rem;
+      box-shadow: 0 3px 0 var(--chip-shadow);
+    }
+    .tool.sel { background: #ffd7a1; box-shadow: 0 3px 0 #d9a26a; }
+    .tool.danger { background: #ffd9d9; box-shadow: 0 3px 0 #d98f8f; }
+    .tool:disabled { opacity: .35; box-shadow: none; }
+    .tool-sp { flex: 1; }
+    .mi-imgnote { font-size: .75rem; font-weight: 700; color: var(--text-soft); padding-top: .4rem; }
+    .tstep { display: flex; align-items: center; gap: 1.2rem; justify-content: center; margin: 1rem 0; }
+    .tablesval { font-size: 2.6rem; font-weight: 900; min-width: 2ch; text-align: center; }
+    .stepbtn {
+      min-width: 3.2rem; min-height: 3.2rem; border-radius: 1rem; font-size: 1.5rem;
+      background: var(--price-bg); color: var(--text); box-shadow: 0 3px 0 var(--chip-shadow);
+    }
+    .stepbtn:disabled { opacity: .35; }
+    .bigbtn.warm { background: linear-gradient(180deg, #ffbf5e, #ff9b5e); box-shadow: 0 5px 0 #c98a35; }
+    .bigbtn.add { background: var(--card-warm); color: var(--text); box-shadow: 0 5px 0 var(--chip-shadow); }
+    .ord {
+      background: var(--card); border-radius: 1.4rem; padding: .9rem;
+      margin-bottom: .7rem; box-shadow: 0 4px 14px var(--shadow-soft), 0 2px 0 var(--shadow-lift);
+    }
+    .ord.done { opacity: .5; }
+    .ord-top { display: flex; align-items: center; gap: .5rem; margin-bottom: .4rem; }
+    .ord-table { font-weight: 900; font-size: 1.1rem; flex: 1; }
+    .ord-when { font-weight: 700; color: var(--text-soft); font-size: .85rem; }
+    .ord-state {
+      font-size: .8rem; font-weight: 900; border-radius: 999px; padding: .3rem .6rem;
+      background: var(--price-bg); color: var(--text);
+    }
+    .ord-state.pending { background: #ffe0a3; color: #7a4a00; }
+    .ord-state.cooking { background: #ffd7a1; color: #7a4a00; }
+    .ord-state.completed { background: #d6f5dd; color: #1b5e2a; }
+    .ord-lines { font-weight: 700; display: grid; gap: .15rem; padding-left: .3rem; }
+    .ol-price { color: var(--text-soft); font-size: .85em; }
+    .ord-foot { font-weight: 800; margin-top: .4rem; color: var(--text-soft); }
+    .ord-note { font-weight: 700; font-size: .92rem; background: var(--card-warm); border-radius: .9rem; padding: .5rem .7rem; margin: .5rem 0; }
+    .done-head { font-weight: 900; color: var(--text-soft); margin: 1.2rem 0 .5rem; }
+    footer { text-align: center; margin-top: 2.5rem; font-weight: 700; color: var(--text-soft); opacity: .8; }
+  </style>
+</head>
+<body>
+  <button id="themeToggle" aria-label="Toggle light/dark theme" title="Light / dark" style="position:fixed;top:calc(.7rem + env(safe-area-inset-top));right:.7rem;z-index:20;font-size:1.15rem;line-height:1;width:2.6rem;height:2.6rem;border:none;border-radius:50%;background:var(--card);box-shadow:0 3px 0 var(--chip-shadow);cursor:pointer;-webkit-tap-highlight-color:transparent">🌓</button>
+  <div class="container"><div id="app"></div></div>
+  <footer>Come feed the caterpillar after lunch! 🐛</footer>
+  <script>
+    (function () {
+      var b = document.getElementById('themeToggle');
+      var paint = function () { b.textContent = (document.documentElement.dataset.theme === 'dark') ? '☀️' : '🌙'; };
+      b.addEventListener('click', function () {
+        var next = (document.documentElement.dataset.theme === 'dark') ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem('theme', next); } catch (e) {}
+        var metas = document.querySelectorAll('meta[name="theme-color"]');
+        for (var i = 0; i < metas.length; i++) { metas[i].removeAttribute('media'); metas[i].setAttribute('content', next === 'dark' ? '#2b2118' : '#ffe29a'); }
+        paint();
+      });
+      paint();
+    })();
+  </script>
+  <script type="module">
+    import { init } from './games/menu/js/admin.js?v=09250742';
+    init();
+  </script>
+</body>
+</html>

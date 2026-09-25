@@ -54,14 +54,27 @@ done
 echo "runtime link check OK"
 
 # Presentation ban: the cloud glyph renders as a washed-out blob on iOS chips.
-if grep -rn -F '☁' games/ index.html 2>/dev/null; then
+if grep -rn -F '☁' games/ index.html admin.html tools/ tests/ 2>/dev/null; then
   echo "FAIL: banned glyph ☁ found — use the .dot status indicator instead"; exit 1
 fi
 echo "glyph check OK"
 
+# admin.html: same base checks as index.html (it's a root page)
+if [ -f admin.html ]; then
+  test -s admin.html || { echo "EMPTY admin.html"; exit 1; }
+  grep -q "</html>" admin.html || { echo "admin.html does not close"; exit 1; }
+  for ref in $(grep -oE '(src|href)="[^"]+"' admin.html | sed -E 's/.*="([^"]+)"/\1/' | grep -vE '^(https?:|//|#|mailto:)' | grep -v -F '${'); do
+    p="${ref%%\?*}"; p="${p%%#*}"
+    case "$p" in /*) target=".$p" ;; *) target="$p" ;; esac
+    test -e "$target" || { echo "MISSING asset: $ref (referenced in admin.html)"; exit 1; }
+  done
+  echo "page OK: admin.html"
+fi
+
 # Theme system: every page has the anti-flash snippet + theme-color metas;
 # the stylesheet defines the dark palette; the controller module exists.
-for f in index.html $(find games -name '*.html' 2>/dev/null); do
+for f in index.html admin.html $(find games -name '*.html' 2>/dev/null); do
+  [ -f "$f" ] || continue
   grep -q "dataset.theme" "$f" || { echo "MISSING anti-flash theme snippet: $f"; exit 1; }
   grep -q 'name="theme-color"' "$f" || { echo "MISSING theme-color meta: $f"; exit 1; }
 done
@@ -73,6 +86,7 @@ echo "theme check OK"
 if command -v node >/dev/null 2>&1; then
   node tools/validate-data.mjs
   node tools/test-quiz.mjs
+  node tools/test-menu.mjs
   node tests/flow.test.mjs
 else
   echo "node not available — skipped data + flow checks"

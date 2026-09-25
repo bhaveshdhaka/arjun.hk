@@ -60,7 +60,7 @@ func clientIP(r *http.Request) string {
 func withCORS(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", allowOrigin)
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 		w.Header().Set("Vary", "Origin")
 		if r.Method == http.MethodOptions {
@@ -75,7 +75,10 @@ type apiServer struct {
 	store   *fileStore
 	tokens  *tokenStore
 	limiter *loginLimiter
+	orderIP *loginLimiter
 	pin     string
+	menu    *menuStore
+	orders  *orderStore
 }
 
 func (s *apiServer) handleHealth(w http.ResponseWriter, _ *http.Request) {
@@ -185,7 +188,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("token store: %v", err)
 	}
-	srv := &apiServer{store: st, tokens: tokens, limiter: newLoginLimiter(), pin: pin}
+	menu, err := newMenuStore(dataDir)
+	if err != nil {
+		log.Fatalf("menu store: %v", err)
+	}
+	srv := &apiServer{
+		store: st, tokens: tokens, limiter: newLoginLimiter(), pin: pin,
+		menu: menu, orders: newOrderStore(dataDir),
+		orderIP: &loginLimiter{fails: map[string][]time.Time{}, maxFail: 6, window: 5 * time.Minute},
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", srv.handleHealth)
@@ -199,6 +210,11 @@ func main() {
 	mux.HandleFunc("/v1/login", withCORS(srv.handleLogin))
 	mux.HandleFunc("/v1/state", withCORS(srv.handleState))
 	mux.HandleFunc("/v1/sync", withCORS(srv.handleSync))
+	mux.HandleFunc("/v1/menu", withCORS(srv.handleMenu))
+	mux.HandleFunc("/v1/menu/img", withCORS(srv.handleImageUpload))
+	mux.HandleFunc("/v1/img/", srv.handleImageGet)
+	mux.HandleFunc("/v1/orders", withCORS(srv.handleOrdersRoute))
+	mux.HandleFunc("/v1/orders/status", withCORS(srv.handleOrderStatus))
 
 	addr := "0.0.0.0:8080"
 	if p := os.Getenv("PORT"); p != "" {

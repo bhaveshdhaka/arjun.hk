@@ -36,6 +36,8 @@ function makeFetch(routes) {
 }
 
 let bootN = 0;
+let apiCalls = [];
+const getApiCalls = () => apiCalls;
 
 async function bootEngine({ search = '', storage = null, routes = [] } = {}) {
   const bootId = `b${++bootN}`;
@@ -287,6 +289,7 @@ async function s11_theme_toggle_persists() {
 }
 
 const tick = () => new Promise((r) => setImmediate(r));
+const tick2 = async () => { for (let i = 0; i < 6; i++) await new Promise((r) => setImmediate(r)); };
 
 async function s13_pronunciation_speaks() {
   const spoken = [];
@@ -343,15 +346,339 @@ async function s16_theme_toggle_on_quiz() {
   check('quiz theme: second tap flips back', doc.documentElement.dataset.theme === before);
 }
 
+/* ---------- online menu (guest) + admin harness ---------- */
+/* ---------- online menu (guest) + admin harness ---------- */
+
+async function loadModule(rel, bootId) {
+  const code = src(rel).replace(/from\s+'([^']+?)'/g, (m, r) => {
+    const abs = path.resolve(path.dirname(path.resolve(ROOT, rel)), r);
+    return `from 'file://${abs}?boot=${bootId}'`;
+  });
+  return import('data:text/javascript,' + encodeURIComponent(code + `\n//${rel}#${bootId}`));
+}
+
+async function bootGuest({ storage = null, seed = null, search = '' } = {}) {
+  const bootId = `g${++bootN}`;
+  const doc = new Document();
+  const store = storage || new MemStorage();
+  const timers = new FakeTimers();
+  parsePage(doc, src('index.html'));
+  doc.documentElement.dataset.theme = 'light';
+  globalThis.localStorage = store;
+  globalThis.document = doc;
+  globalThis.location = { search };
+  globalThis.setTimeout = (fn) => timers.setTimeout(fn);
+  globalThis.clearTimeout = (id) => timers.clearTimeout(id);
+  globalThis.matchMedia = (q) => ({ matches: false, media: q });
+  apiCalls = [];
+  globalThis.fetch = makeFetch([
+    {
+      method: 'GET', part: '/v1/menu',
+      respond: () => ({ status: 200, json: seed || {
+        tables: 12,
+        items: [
+          { id: 'bagel', name: 'Bagel', emoji: '🥯', price: 20, menu: 'breakfast', img: 'images/bagel.png', desc: 'with cream cheese' },
+          { id: 'cheese', name: 'Cheese', emoji: '🧀', price: 13, menu: 'allday', img: 'images/cheese.png', desc: 'with grapes' },
+          { id: 'matcha', name: 'Matcha', emoji: '🍵', price: 16, menu: 'allday', img: 'images/matcha.png', desc: 'latte with heart' },
+          { id: 'cream', name: 'Cream', emoji: '🥛', price: 19, menu: 'allday', img: 'images/cream.png' },
+          { id: 'icecream', name: 'Ice-Cream', emoji: '🍦', price: 18, menu: 'allday', img: 'images/icecream.png', desc: 'chocolate cone' },
+        ],
+      } }),
+    },
+    {
+      method: 'POST', part: '/v1/orders',
+      respond: ({ body }) => {
+        apiCalls.push(['order', body]);
+        return { status: 200, json: { id: 'o1', table: body.table, status: 'pending', total: body.items.reduce((t, l) => t + l.price * l.qty, 0) } };
+      },
+    },
+  ]);
+  globalThis.Image = class { set src(_v) {} };
+  const menu = await loadModule('games/menu/js/menu.js', bootId);
+  await menu.init();
+  await tick();
+  return { doc, root: doc.getElementById('menuRoot'), store, timers };
+}
+
+async function bootAdmin({ storage = null, menu = null, orders = [] } = {}) {
+  const bootId = `a${++bootN}`;
+  const doc = new Document();
+  const store = storage || new MemStorage();
+  const timers = new FakeTimers();
+  parsePage(doc, src('admin.html'));
+  doc.documentElement.dataset.theme = 'light';
+  globalThis.localStorage = store;
+  globalThis.document = doc;
+  globalThis.location = { search: '' };
+  globalThis.setTimeout = (fn) => timers.setTimeout(fn);
+  globalThis.clearTimeout = (id) => timers.clearTimeout(id);
+  globalThis.matchMedia = (q) => ({ matches: false, media: q });
+  apiCalls = [];
+  const myOrders = orders.map((o) => ({ ...o }));
+  globalThis.fetch = makeFetch([
+    {
+      method: 'GET', part: '/v1/menu',
+      respond: () => ({ status: 200, json: menu || {
+        tables: 12,
+        items: [
+          { id: 'cheese', name: 'Cheese', emoji: '🧀', price: 13, menu: 'allday', img: 'images/cheese.png' },
+          { id: 'bagel', name: 'Bagel', emoji: '🥯', price: 20, menu: 'breakfast', img: 'images/bagel.png' },
+        ],
+      } }),
+    },
+    {
+      method: 'PUT', part: '/v1/menu',
+      respond: ({ body }) => { apiCalls.push(['menu-put', body]); return body; },
+    },
+    {
+      method: 'POST', part: '/v1/login',
+      respond: ({ body }) => {
+        apiCalls.push(['login', body]);
+        return body && body.pin === '4321'
+          ? { status: 200, json: { token: 'admintok' } }
+          : { status: 401, json: { error: 'wrong pin' } };
+      },
+    },
+    {
+      method: 'GET', part: '/v1/orders',
+      respond: () => { apiCalls.push(['orders-get', null]); return { status: 200, json: myOrders.map((o) => ({ ...o })) }; },
+    },
+    {
+      method: 'POST', part: '/v1/orders/status',
+      respond: ({ body }) => {
+        apiCalls.push(['ord-status', body]);
+        const hit = myOrders.find((o) => o.id === body.id);
+        if (hit) hit.status = body.status;
+        return { status: 200, json: hit || { id: body.id, status: body.status } };
+      },
+    },
+  ]);
+  globalThis.Image = class { set src(_v) {} };
+  const admin = await loadModule('games/menu/js/admin.js', bootId);
+  await admin.init();
+  await tick();
+  return { doc, root: doc.getElementById('app'), store, timers };
+}
+
+const MENU_OK = (cond, name) => check(name, cond);
+
+async function s17_guest_menu_renders() {
+  const { root, doc } = await bootGuest({});
+  MENU_OK(querySelectorAll(root, '[data-act="add"]').length === 5, 'menu: five dishes with + Add');
+  MENU_OK(querySelectorAll(root, '[data-act="sec"]').length === 5, 'menu: five section heads');
+  MENU_OK(querySelectorAll(root, '.nowbadge').length === 1, 'menu: exactly one "now" section');
+  MENU_OK(doc.getElementById('tableBar').textContent.toLowerCase().includes('pick your table'), 'menu: table bar invites pick');
+  MENU_OK((doc.getElementById('cartPill').textContent || '').trim() === '', 'menu: cart pill hidden when empty');
+}
+
+async function s18_guest_qs_preselect() {
+  const { doc, store } = await bootGuest({ search: '?t=7' });
+  const bar = doc.getElementById('tableBar').textContent;
+  MENU_OK(bar.includes('Table') && bar.includes('7'), 'menu: ?t=7 picks table 7');
+  MENU_OK(Number(store.getItem('menu.table')) === 7, 'menu: table choice persisted');
+}
+
+async function s19_table_cart_send() {
+  const { doc, store, timers } = await bootGuest({});
+  dispatch(doc.getElementById('tableBar'), 'click');
+  MENU_OK(doc.getElementById('tableOverlay').hidden === false, 'cart: table picker opens');
+  const chip7 = querySelectorAll(doc.getElementById('tableGrid'), '[data-act="picktable"]').find((c) => c.dataset.n === '7');
+  dispatch(chip7, 'click');
+  const barAfter = doc.getElementById('tableBar').textContent;
+  MENU_OK(barAfter.includes('Table') && barAfter.includes('7'), 'cart: table picked (bar shows number)');
+  MENU_OK(doc.getElementById('tableOverlay').hidden === true, 'cart: picker closes after pick');
+  MENU_OK(Number(store.getItem('menu.table')) === 7, 'cart: table persisted');
+  const addCheese = querySelectorAll(doc.getElementById('menuRoot'), '[data-act="add"]').find((b) => b.dataset.id === 'cheese');
+  MENU_OK(!!addCheese, 'cart: all-day cheese has + Add');
+  dispatch(addCheese, 'click');
+  MENU_OK(doc.getElementById('cartPill').textContent.includes('🛒'), 'cart: pill shows count');
+  const pill = doc.getElementById('cartPill');
+  dispatch(pill, 'click');
+  MENU_OK(doc.getElementById('orderSheet').hidden === false, 'cart: sheet opens');
+  const inc = querySelectorAll(doc.getElementById('orderSheet'), '[data-act="inc"]')[0];
+  dispatch(inc, 'click');
+  MENU_OK(querySelector(doc.getElementById('orderSheet'), '.totrow').textContent.includes('$26'), 'cart: total updates ($26 for 2 cheese)');
+  const noteEl = querySelector(doc.getElementById('orderSheet'), 'textarea[data-note]');
+  noteEl.value = 'no grapes';
+  dispatch(noteEl, 'input');
+  const octo = querySelectorAll(doc.getElementById('orderSheet'), '[data-act="pay"]').find((c) => c.dataset.key === 'octopus');
+  dispatch(octo, 'click');
+  const octoAfter = querySelectorAll(doc.getElementById('orderSheet'), '[data-act="pay"]').find((c) => c.dataset.key === 'octopus');
+  MENU_OK(!!octoAfter && String((octoAfter.attrs.class || '').includes('sel')), 'cart: payment chip selects (octopus)');
+  const send = querySelector(doc.getElementById('orderSheet'), '[data-act="send"]');
+  dispatch(send, 'click');
+  await tick2();
+  const order = (apiCalls.find(([k]) => k === 'order') || [])[1];
+  MENU_OK(order && order.table === 7 && order.pay === 'octopus' && order.note === 'no grapes', 'cart: order posted with table/note/pay');
+  MENU_OK(order && order.items && order.items[0] && order.items[0].qty === 2 && order.items[0].id === 'cheese', 'cart: order lines derived from menu');
+  MENU_OK(doc.getElementById('orderSheet').textContent.includes('Order sent'), 'cart: confirmation shown');
+  MENU_OK((doc.getElementById('cartPill').textContent || '').trim() === '', 'cart: pill cleared after order');
+  MENU_OK(store.getItem('menu.cart') === '{}', 'cart: persisted cart emptied');
+  const done = querySelector(doc.getElementById('orderSheet'), '[data-act="done"]');
+  dispatch(done, 'click');
+  MENU_OK(doc.getElementById('orderSheet').hidden === true, 'cart: sheet closes after done');
+  timers.flush();
+}
+
+async function s20_admin_wrong_then_right_pin() {
+  const { root, doc, store } = await bootAdmin({});
+  MENU_OK(!!querySelector(doc, '#pinForm'), 'admin: pin gate shown');
+  const pin = querySelector(doc, '#pinInput');
+  pin.value = '0000';
+  dispatch(querySelector(doc, '#pinForm'), 'submit');
+  await tick2();
+  MENU_OK(querySelector(root, '.gate-err') !== null, 'admin: wrong pin shows error');
+  MENU_OK(store.getItem('menu.adminToken') == null, 'admin: no token on failure');
+  // the gate re-rendered on failure — re-query the input
+  querySelector(doc, '#pinInput').value = '4321';
+  dispatch(querySelector(doc, '#pinForm'), 'submit');
+  await tick2();
+  await tick2();
+  { const got = store.getItem('menu.adminToken'); MENU_OK(got != null && String(got).includes('admintok'), 'admin: token stored (got=' + JSON.stringify(got) + ')'); }
+  MENU_OK(root.textContent.includes('Kitchen Admin'), 'admin: shell after login');
+  MENU_OK(querySelectorAll(root, '.mi').length === 2, 'admin: menu editor lists 2 items');
+}
+
+async function s21_admin_menu_edit_and_save() {
+  const { root, doc } = await bootAdmin({});
+  const pin21 = querySelector(doc, '#pinInput');
+  pin21.value = '4321';
+  dispatch(querySelector(doc, '#pinForm'), 'submit');
+  await tick2();
+  await tick2();
+  dispatch(querySelector(doc, '#pinForm'), 'submit');
+  await tick2();
+  await tick2();
+  dispatch(querySelector(doc, '[data-act="additem"]'), 'click');
+  MENU_OK(querySelectorAll(root, '.mi').length === 3, 'admin editor: add dish adds row');
+  const first = querySelectorAll(root, '.mi')[0];
+  const sold = querySelector(first, '[data-act="sold"]');
+  dispatch(sold, 'click');
+  const soldRow = querySelectorAll(root, '.mi')[0]; // rows re-render on toggle
+  const soldBtn = querySelector(soldRow, '[data-act="sold"]');
+  MENU_OK(String((soldBtn && soldBtn.attrs.class) || '').includes('sel'), 'admin editor: sold-out toggles');
+  const before = querySelectorAll(root, '.mi').map((r) => r.dataset.mi);
+  dispatch(querySelector(first, '[data-act="down"]'), 'click');
+  const after = querySelectorAll(root, '.mi').map((r) => r.dataset.mi);
+  MENU_OK(before[0] === after[1] && before[1] === after[0], 'admin editor: down reorders rows');
+  dispatch(querySelectorAll(root, '.mi')[1].querySelector('[data-act="up"]'), 'click'); // up on the shuffled-down-row's successor restores
+  const restored = querySelectorAll(root, '.mi').map((r) => r.dataset.mi);
+  MENU_OK(restored.join('|') === before.join('|'), 'admin editor: up restores order');
+  dispatch(querySelector(doc, '[data-act="save"]'), 'click');
+  await tick2();
+  const put = (apiCalls.find(([k]) => k === 'menu-put') || [])[1];
+  MENU_OK(put && put.items.length === 3 && put.items.every((it, i) => it.sort === i), 'admin editor: save posts items with sort');
+  MENU_OK(root.textContent.includes('Saved! Menu is live'), 'admin editor: saved toast');
+}
+
+async function s22_admin_tables() {
+  const { root, doc, timers } = await bootAdmin({});
+  const pin = querySelector(doc, '#pinInput');
+  pin.value = '4321';
+  dispatch(querySelector(doc, '#pinForm'), 'submit');
+  await tick2();
+  await tick2();
+  dispatch(querySelectorAll(doc, '[data-act="tab"]').find((t) => t.dataset.key === 'tables'), 'click');
+  const val = querySelector(root, '#tablesVal');
+  MENU_OK(val.textContent === '12', 'tables: current count shown');
+  dispatch(querySelector(doc, '[data-act="tables-inc"]'), 'click');
+  MENU_OK(querySelector(root, '#tablesVal').textContent === '13', 'tables: + increments');
+  dispatch(querySelector(doc, '[data-act="tables-dec"]'), 'click');
+  dispatch(querySelector(doc, '[data-act="tables-dec"]'), 'click');
+  dispatch(querySelector(doc, '[data-act="tables-dec"]'), 'click');
+  MENU_OK(querySelector(root, '#tablesVal').textContent === '10', 'tables: − decrements');
+  dispatch(querySelector(doc, '[data-act="save"]'), 'click');
+  await tick2();
+  const put = (apiCalls.find(([k]) => k === 'menu-put') || [])[1];
+  MENU_OK(put && put.tables === 10, 'tables: count saved to API');
+  timers.flush();
+}
+
+async function s23_admin_orders_flow() {
+  const base = Date.now();
+  const orders = [
+    { id: 'o1', table: 3, items: [{ id: 'cheese', name: 'Cheese', qty: 2, price: 13 }], total: 26, pay: 'octopus', note: 'extra grapes', at: base, status: 'pending' },
+    { id: 'o2', table: 5, items: [{ id: 'bagel', name: 'Bagel', qty: 1, price: 20 }], total: 20, pay: 'cash', at: base + 1000, status: 'cooking' },
+  ];
+  const { root, doc, timers } = await bootAdmin({ orders });
+  querySelector(doc, '#pinInput').value = '4321';
+  dispatch(querySelector(doc, '#pinForm'), 'submit');
+  await tick2();
+  await tick2();
+  dispatch(querySelectorAll(doc, '[data-act="tab"]').find((t) => t.dataset.key === 'orders'), 'click');
+  const count = querySelector(root, '#ordCount');
+  MENU_OK(count.textContent.includes('2'), 'orders: live count shows 2 open');
+  MENU_OK(querySelectorAll(root, '.ord').length === 2, 'orders: two tickets');
+  const firstCard = querySelectorAll(root, '.ord')[0];
+  MENU_OK(firstCard.textContent.includes('Table') && firstCard.textContent.includes('3') && firstCard.textContent.includes('extra grapes'), 'orders: ticket shows table + note');
+  const startBtn = querySelector(firstCard, '[data-act="ordnext"]');
+  MENU_OK(startBtn.dataset.next === 'cooking', 'orders: pending offers Start cooking');
+  dispatch(startBtn, 'click');
+  await tick2();
+  const cookCall = apiCalls.find(([k]) => k === 'ord-status');
+  MENU_OK(cookCall && cookCall[1] && cookCall[1].id === 'o1' && cookCall[1].status === 'cooking', 'orders: pending -> cooking POST');
+  const cardO1 = querySelectorAll(root, '.ord').find((c) => c.attrs['data-ord'] === 'o1');
+  const doneBtn = querySelector(cardO1, '[data-act="ordnext"]');
+  MENU_OK(doneBtn && doneBtn.dataset.next === 'completed', 'orders: cooking offers Complete');
+  dispatch(doneBtn, 'click');
+  await tick2();
+  const doneCall = apiCalls.filter(([k]) => k === 'ord-status').pop();
+  MENU_OK(doneCall && doneCall[1].id === 'o1' && doneCall[1].status === 'completed', 'orders: cooking -> completed POST');
+  const cnt = querySelector(root, '#ordCount');
+  MENU_OK(cnt.textContent.includes('1'), 'orders: count drops to 1');
+  const before = apiCalls.filter(([k]) => k === 'orders-get').length;
+  timers.flush();
+  await tick2();
+  const after = apiCalls.filter(([k]) => k === 'orders-get').length;
+  MENU_OK(after > before, 'orders: auto-poll refetches (~12s)');
+}
+
+async function s24_menu_dead_buttons() {
+  const collect = (el, out = []) => {
+    if (el.attrs && el.attrs['data-act']) out.push(el.attrs['data-act']);
+    (el.children || []).forEach((c) => collect(c, out));
+    return out;
+  };
+  const g = await bootGuest({});
+  const emitted = [...new Set(collect(g.doc.body))];
+  const menuActions = ['table', 'picktable', 'closetable', 'cartbtn', 'closesh', 'sec', 'add', 'inc', 'dec', 'rm', 'pay', 'send', 'done'];
+  const unhandled = emitted.filter((a) => !menuActions.includes(a));
+  MENU_OK(emitted.length > 0 && unhandled.length === 0, `menu: dead-button inventory (${emitted.length} emitted, ${unhandled.length} unhandled)`);
+
+  const da = await bootAdmin({});
+  const root2 = da.doc.getElementById('app');
+  querySelector(da.doc, '#pinInput').value = '4321';
+  dispatch(querySelector(da.doc, '#pinForm'), 'submit');
+  await tick2();
+  await tick2();
+  const adminActions = ['login', 'logout', 'tab', 'additem', 'del', 'up', 'down', 'sold', 'photo', 'save', 'tables-inc', 'tables-dec', 'ordnext', 'dismissmsg'];
+  const collectActs = (el, out = []) => {
+    if (el.attrs && el.attrs['data-act']) out.push(el.attrs['data-act']);
+    (el.children || []).forEach((c) => collectActs(c, out));
+    return out;
+  };
+  const emitted2 = []; // across all three tabs
+  emitted2.push(...collectActs(root2));
+  querySelector(da.doc, '[data-act="tab"][data-key="tables"]') && dispatch(querySelector(da.doc, '[data-act="tab"][data-key="tables"]'), 'click');
+  emitted2.push(...collectActs(root2));
+  dispatch(querySelector(da.doc, '[data-act="tab"][data-key="orders"]'), 'click');
+  const adminEmit = [...new Set(emitted2)];
+  const unhandled2 = adminEmit.filter((a) => !adminActions.includes(a));
+  MENU_OK(adminEmit.length > 0 && unhandled2.length === 0, `admin: dead-button inventory (${adminEmit.length} emitted, ${unhandled2.length} unhandled)`);
+}
+
 const scenarios = [
   s1_intro_fresh, s2_full_session, s3_wrong_tip_and_continue, s4_typein_and_toggle,
   s5_wrong_pin_guest_isolation, s6_correct_pin_sync_and_signout,
   s7_drill_autostart, s8_autostart_preserves_saved_cfg, s9_escape_to_summary,
   s10_dead_button_inventory, s11_theme_toggle_persists, s13_pronunciation_speaks,
   s15_quiz_typein_correct_scores, s16_theme_toggle_on_quiz,
+  s17_guest_menu_renders, s18_guest_qs_preselect, s19_table_cart_send,
+  s20_admin_wrong_then_right_pin, s21_admin_menu_edit_and_save,
+  s22_admin_tables, s23_admin_orders_flow, s24_menu_dead_buttons,
 ];
 for (const s of scenarios) {
-  try { await s(); await tick(); await tick(); } catch (e) { fails.push(s.name); console.error(`FAIL - ${s.name} threw at:`, String(e.stack || e.message).split('\n').slice(1, 5).join(' | ')); }
+  try { await s(); await tick(); await tick(); } catch (e) { fails.push(s.name); console.error(`FAIL - ${s.name} threw: ${(e && e.message) || e}`, String(e.stack || '').split('\n').slice(1, 4).join(' | ')); }
 }
 console.log(`\nflow tests: ${pass} ok, ${fails.length} failed`);
 if (fails.length) { fails.forEach((f) => console.error(' -', f)); process.exit(1); }

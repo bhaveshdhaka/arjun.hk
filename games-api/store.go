@@ -24,13 +24,13 @@ type SrsEntry struct {
 }
 
 type Session struct {
-	At     string         `json:"at"`
-	N      int            `json:"n"`
-	Correct int          `json:"correct"`
-	Score  int            `json:"score"`
-	Streak int            `json:"streak"`
-	TimeMs int            `json:"timeMs"`
-	Cfg    map[string]any `json:"cfg,omitempty"`
+	At      string         `json:"at"`
+	N       int            `json:"n"`
+	Correct int            `json:"correct"`
+	Score   int            `json:"score"`
+	Streak  int            `json:"streak"`
+	TimeMs  int            `json:"timeMs"`
+	Cfg     map[string]any `json:"cfg,omitempty"`
 }
 
 type Totals struct {
