@@ -199,11 +199,14 @@ function pillHTML() {
 /* ---------- wiring ---------- */
 
 function paint() {
+  const modal = state.sheetOpen || state.tableOpen;
   setHTML('menuRoot', renderMenuGrid());
   setHTML('tableBar', tableBarHTML());
   setHTML('cartPill', pillHTML());
   setHTML('tableGrid', tablePickerHTML());
   setHTML('orderSheet', sheetHTML());
+  setHidden('tableBar', modal);
+  setHidden('cartPill', modal || !cartCount(state.cart));
   setHidden('tableOverlay', !state.tableOpen);
   setHidden('orderSheet', !state.sheetOpen || state.tableOpen);
 }

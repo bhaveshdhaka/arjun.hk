@@ -262,13 +262,20 @@
       padding-bottom: calc(1rem + env(safe-area-inset-bottom));
     }
     .ov-card, .sheet {
-      width: 100%; max-width: 560px; max-height: 78dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      width: 100%; max-width: 560px; max-height: 82dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
       background: var(--card); backdrop-filter: blur(6px); color: var(--text);
       border-radius: 2rem; padding: 1.3rem 1.2rem;
       box-shadow: 0 12px 40px var(--shadow-soft), 0 4px 0 var(--shadow-lift);
-      margin-bottom: calc(.5rem + env(safe-area-inset-bottom));
     }
-    .ov-card { max-height: 70dvh; }
+    .ov-card { max-height: 70dvh; margin-bottom: calc(.5rem + env(safe-area-inset-bottom)); }
+    .sheet {
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: 0; z-index: 60; margin-bottom: 0;
+      border-radius: 2rem 2rem 0 0;
+      padding-bottom: calc(1.3rem + env(safe-area-inset-bottom));
+      animation: sheet-up .28s cubic-bezier(.34,1.2,.64,1);
+    }
+    @keyframes sheet-up { from { transform: translate(-50%, 40%); opacity: .4; } to { transform: translate(-50%, 0); opacity: 1; } }
     .ov-head, .sh-head { font-size: clamp(1.25rem, 5vw, 1.6rem); font-weight: 900; margin-bottom: .8rem; text-align: center; }
     .tablegrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr)); gap: .5rem; margin-bottom: 1rem; }
     .tablechip {
@@ -389,7 +396,7 @@
   <div id="orderSheet" class="sheet" hidden role="dialog" aria-label="Your order"></div>
 
   <script type="module">
-    import { init } from './games/menu/js/menu.js?v=09250821';
+    import { init } from './games/menu/js/menu.js?v=09250835';
     init();
   </script>
 

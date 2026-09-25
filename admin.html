@@ -98,19 +98,19 @@
       background: var(--card); border-radius: 1.4rem; padding: .9rem;
       margin-bottom: .8rem; box-shadow: 0 4px 14px var(--shadow-soft), 0 2px 0 var(--shadow-lift);
     }
-    .mi-row { display: flex; gap: .5rem; margin-bottom: .5rem; }
+    .mi-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .5rem; }
     .mi-row:last-of-type { margin-bottom: .3rem; }
     .in {
-      font-family: inherit; font-size: 1rem; font-weight: 700; color: var(--text);
+      font-family: inherit; font-size: 16px; font-weight: 700; color: var(--text);
       background: var(--card-warm); border: 2px solid transparent; border-radius: .9rem;
       padding: .55rem .7rem; min-width: 0;
     }
     .in:focus { outline: none; border-color: var(--accent); }
-    .emoji { width: 3.6rem; text-align: center; font-size: 1.2rem; }
-    .name { flex: 1.4; }
-    .price { width: 5.2rem; }
-    .desc { flex: 1.4; }
-    select.slot { flex: 1; font-family: inherit; font-weight: 800; -webkit-appearance: none; }
+    .emoji { flex: 0 0 3.2rem; width: 3.2rem; text-align: center; font-size: 18px; }
+    .name { flex: 1 1 9rem; }
+    .price { flex: 0 0 5.4rem; width: 5.4rem; }
+    .desc { flex: 1 1 9rem; }
+    select.slot { flex: 1 1 9.5rem; font-size: 16px; font-family: inherit; font-weight: 800; -webkit-appearance: none; }
     .mi-tools { display: flex; gap: .4rem; align-items: center; }
     .tool {
       font-size: .88rem; color: var(--text); background: var(--price-bg);
@@ -174,7 +174,7 @@
     })();
   </script>
   <script type="module">
-    import { init } from './games/menu/js/admin.js?v=09250821';
+    import { init } from './games/menu/js/admin.js?v=09250835';
     init();
   </script>
 </body>
