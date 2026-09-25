@@ -163,10 +163,10 @@ func (f *fileStore) saveLocked(st State) error {
 }
 
 type tokenStore struct {
-	mu      sync.Mutex
-	path    string
-	cache   map[string]int64 // sha256(token) -> expires unix
-	fallback map[string]bool // pre-TTL tokens from the old format: treated as expired
+	mu       sync.Mutex
+	path     string
+	cache    map[string]int64 // sha256(token) -> expires unix
+	fallback map[string]bool  // pre-TTL tokens from the old format: treated as expired
 }
 
 const tokenTTL = 30 * 24 * time.Hour
