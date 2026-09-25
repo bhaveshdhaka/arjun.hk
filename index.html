@@ -272,17 +272,18 @@
     .emptynote.warn { color: #a33; }
     /* table + cart floating controls */
     .tablebar, .cartpill {
-      position: fixed; left: 50%; transform: translateX(-50%); z-index: 30;
+      position: fixed; z-index: 30;
       border: none; cursor: pointer; font-family: inherit;
       font-size: clamp(.95rem, 3.8vw, 1.1rem); font-weight: 900; color: var(--text);
       background: var(--chip-bg); border-radius: 999px;
       box-shadow: 0 4px 0 var(--toggle-shadow), 0 10px 24px var(--shadow-soft);
-      padding: .75rem 1.3rem; min-height: 3rem;
+      padding: .75rem 1rem; min-height: 3rem;
       -webkit-tap-highlight-color: transparent;
+      max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .tablebar { bottom: calc(1rem + env(safe-area-inset-bottom)); }
-    .cartpill { bottom: calc(1rem + env(safe-area-inset-bottom) + 4.4rem); display: none; background: linear-gradient(180deg, #ff8f5e, #ff5e7e); color: #fff; box-shadow: 0 4px 0 var(--btn-shadow), 0 10px 24px var(--shadow-soft); }
-    .cartpill:not(:empty) { display: block; }
+    .tablebar { left: .7rem; bottom: calc(1rem + env(safe-area-inset-bottom)); }
+    .cartpill { right: .7rem; left: auto; bottom: calc(1rem + env(safe-area-inset-bottom)); display: none; background: linear-gradient(180deg, #ff8f5e, #ff5e7e); color: #fff; box-shadow: 0 4px 0 var(--btn-shadow), 0 10px 24px var(--shadow-soft); }
+    .cartpill:not([hidden]) { display: block; }
     .overlay {
       position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center;
       background: #00000055; backdrop-filter: blur(2px); padding: 1rem;
@@ -424,7 +425,7 @@
   <div id="orderSheet" class="sheet" hidden role="dialog" aria-label="Your order"></div>
 
   <script type="module">
-    import { init } from './games/menu/js/menu.js?v=09251450';
+    import { init } from './games/menu/js/menu.js?v=09251453';
     init();
   </script>
 

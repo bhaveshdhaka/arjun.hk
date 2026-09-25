@@ -1,6 +1,6 @@
 import {
   SLOTS, sectionOrder, currentSlot, cartCount, cartTotal, orderLines, PAY_METHODS,
-} from './clock.js?v=09251450';
+} from './clock.js?v=09251453';
 
 const API = 'https://api.arjun.hk';
 
@@ -130,9 +130,12 @@ function renderJumpChips() {
 }
 
 function tableBarHTML() {
-  return state.table != null
-    ? `🍽️ Table <b>${esc(state.table)}</b>`
-    : '🍽️ <b>Tap to pick your table</b>';
+  if (state.table != null) {
+    return cartCount(state.cart) && !state.sheetOpen
+      ? `🍽️ ${esc(state.table)}` // compact while the user is ordering
+      : `🍽️ Table <b>${esc(state.table)}</b>`;
+  }
+  return '🍽️ <b>Tap to pick your table</b>';
 }
 
 function tablePickerHTML() {
