@@ -82,4 +82,7 @@ export function payLabel(key) {
   return hit ? hit.label : key;
 }
 
-export const STATE_LABELS = { pending: '🆕 New', cooking: '🍳 Cooking', completed: '✓ Done' };
+export const STATE_LABELS = { pending: '🆕 New', cooking: '🍳 Cooking', completed: '🛎️ Served' };
+
+// Live "serving X now" until-label for the guest badge (replaces a static "Now Open").
+export const SLOT_TILL = { breakfast: 'till 11:30', lunch: 'till 17:30', dinner: 'till 23:00', midnight: 'till 6:00', allday: 'always' };

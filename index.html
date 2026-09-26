@@ -214,7 +214,7 @@
     .jumpbar {
       position: sticky; z-index: 12; top: 0; display: flex; gap: .4rem; overflow-x: auto;
       padding: .45rem .2rem .55rem; margin: 0 0 .9rem; -webkit-overflow-scrolling: touch;
-      background: transparent; backdrop-filter: blur(8px); border-radius: 1.2rem;
+      background: transparent; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-radius: 1.2rem;
     }
     .jumpbar::-webkit-scrollbar { display: none; }
     .jumpchip {
@@ -286,12 +286,12 @@
     .cartpill:not([hidden]) { display: block; }
     .overlay {
       position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center;
-      background: #00000055; backdrop-filter: blur(2px); padding: 1rem;
+      background: #00000055; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); padding: 1rem;
       padding-bottom: calc(1rem + env(safe-area-inset-bottom));
     }
     .ov-card, .sheet {
       width: 100%; max-width: 560px; max-height: 82dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
-      background: var(--card); backdrop-filter: blur(6px); color: var(--text);
+      background: var(--card); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--text);
       border-radius: 2rem; padding: 1.3rem 1.2rem;
       box-shadow: 0 12px 40px var(--shadow-soft), 0 4px 0 var(--shadow-lift);
     }
@@ -366,7 +366,7 @@
   <div class="container">
     <header>
       <h1>Baby Boy's<br />Restaurant</h1>
-      <div class="badge">Now Open! 🎉</div>
+      <div class="badge" id="openBadge">Now Open! 🎉</div>
     </header>
     <div id="jumpBar" class="jumpbar" aria-label="Menu sections"></div>
     <div class="menu" id="menuRoot"></div>
@@ -425,7 +425,7 @@
   <div id="orderSheet" class="sheet" hidden role="dialog" aria-label="Your order"></div>
 
   <script type="module">
-    import { init } from './games/menu/js/menu.js?v=09251504';
+    import { init } from './games/menu/js/menu.js?v=09260025';
     init();
   </script>
 

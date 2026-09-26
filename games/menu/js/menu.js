@@ -1,6 +1,6 @@
 import {
-  SLOTS, sectionOrder, currentSlot, cartCount, cartTotal, orderLines, PAY_METHODS,
-} from './clock.js?v=09251504';
+  SLOTS, sectionOrder, currentSlot, cartCount, cartTotal, orderLines, PAY_METHODS, SLOT_TILL,
+} from './clock.js?v=09260025';
 
 const API = 'https://api.arjun.hk';
 
@@ -36,7 +36,7 @@ const state = {
   offline: false,
   cart: {},
   table: null,
-  pay: 'cash',
+  pay: null, // honest default: no chip preselected (no surprise at the counter)
   note: '',
   sheetOpen: false,
   tableOpen: false,
@@ -162,25 +162,42 @@ function sheetHTML() {
       </div>`;
   }
   const all = items();
+  // reconcile: silently drop dishes the kitchen marked sold out since the
+  // cart was built — the guest sees a friendly line instead of an error.
+  const staleNames = [];
+  for (const [id, qty] of Object.entries(state.cart)) {
+    const it = all.find((x) => x.id === id);
+    if (!it || it.soldOut) {
+      staleNames.push(it ? it.name : id);
+      delete state.cart[id];
+    }
+  }
+  if (staleNames.length) syncCart();
   const lines = orderLines(state.cart, all);
   const total = cartTotal(state.cart, all);
   const noTable = state.table == null;
   const offline = state.offline;
-  const canSend = lines.length > 0 && !noTable && !offline;
+  const noPay = !state.pay;
+  const canSend = lines.length > 0 && !noTable && !offline && !noPay;
+  const sendHint = !lines.length ? 'add a dish first'
+    : noTable ? 'pick your table first'
+    : noPay ? 'pick how you\'ll pay at the counter'
+    : '';
   return `
     <div class="sh-head">🛒 Your order${noTable ? ' — pick your table' : ` · Table ${esc(state.table)}`}</div>
     <div class="sh-body">
+      ${staleNames.length ? `<div class="emptynote">${esc(staleNames.join(', '))} ${staleNames.length > 1 ? 'are' : 'is'} sold out — removed from your order 🙂</div>` : ''}
       ${noTable ? `<div class="tablewrap">${tablePickerHTML()}</div>` : ''}
-      ${lines.length ? lines.map(cartLineHTML).join('') : '<div class="emptynote">Cart is empty — tap + Add on a dish!</div>'}
+      ${lines.length ? lines.map(cartLineHTML).join('') : '<div class="emptynote">Cart is empty — tap + Add on a dish!</div><button class="sh-aux" data-act="closesh">Add another dish</button>'}
       <div class="totrow"${lines.length ? '' : ' hidden'}><span>Total</span><b>$${esc(total)} dollarbucks</b></div>
       <textarea class="notefield" rows="2" maxlength="300" data-note placeholder="Anything else? (no onions, birthday candles...)" aria-label="Order note">${esc(state.note)}</textarea>
       <div class="notecount"><span id="noteCount">${300 - state.note.length}</span> characters left</div>
       <div class="payrow" role="radiogroup" aria-label="How will you pay at the counter?">
-        ${PAY_METHODS.map((p) => `<button class="paychip${state.pay === p.key ? ' sel' : ''}" data-act="pay" data-key="${esc(p.key)}">${esc(p.label)}</button>`).join('')}
+        ${PAY_METHODS.map((p) => `<button class="paychip${state.pay === p.key ? ' sel' : ''}" data-act="pay" data-key="${esc(p.key)}" aria-pressed="${state.pay === p.key}">${esc(p.label)}</button>`).join('')}
       </div>
       ${offline ? '<div class="emptynote warn">⚠️ Can\'t reach the kitchen right now — please try again shortly.</div>' : ''}
-      ${state.sendErr ? `<div class="emptynote warn">⚠️ ${esc(state.sendErr)}</div>` : ''}
-      <button class="bigbtn" data-act="send"${canSend ? '' : ' disabled'}>Send order to the kitchen</button>
+      ${state.sendErr ? `<div class="emptynote warn" aria-live="assertive">⚠️ ${esc(state.sendErr)}</div>` : ''}
+      <button class="bigbtn" data-act="send"${canSend ? '' : ' disabled'} title="${sendHint ? sendHint : 'off it goes to the kitchen'}">${canSend ? 'Send order to the kitchen' : `Send order — ${sendHint}`}</button>
       <button class="sh-aux" data-act="closesh">Keep browsing the menu</button>
     </div>`;
 }
@@ -219,8 +236,16 @@ function cartRepaint() {
   if (state.sheetOpen && !state.tableOpen) setHTML('orderSheet', sheetHTML());
 }
 
+function renderOpenBadge() {
+  const current = currentSlot(new Date());
+  const sec = SLOTS.find((s) => s.key === current) || { label: 'everything', emoji: '🍽️' };
+  const till = SLOT_TILL[current] || 'always';
+  return `Now serving ${sec.emoji} ${sec.label.toLowerCase()} ${till}`;
+}
+
 function paint() {
   const modal = state.sheetOpen || state.tableOpen;
+  setHTML('openBadge', renderOpenBadge());
   setHTML('menuRoot', renderMenuGrid());
   setHTML('jumpBar', renderJumpChips());
   setHTML('tableBar', tableBarHTML());

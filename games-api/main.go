@@ -221,7 +221,7 @@ func main() {
 	srv := &apiServer{
 		store: st, tokens: tokens, limiter: newLoginLimiter(), pin: pin,
 		menu: menu, orders: newOrderStore(dataDir),
-		orderIP: &loginLimiter{fails: map[string][]time.Time{}, maxFail: 6, window: 5 * time.Minute},
+		orderIP: &loginLimiter{fails: map[string][]time.Time{}, maxFail: 12, window: 5 * time.Minute},
 	}
 
 	mux := http.NewServeMux()
@@ -242,6 +242,7 @@ func main() {
 	mux.HandleFunc("/v1/img/", srv.handleImageGet)
 	mux.HandleFunc("/v1/orders", withCORS(srv.handleOrdersRoute))
 	mux.HandleFunc("/v1/orders/status", withCORS(srv.handleOrderStatus))
+	mux.HandleFunc("/v1/orders/clear", withCORS(srv.handleOrderClear))
 
 	addr := "0.0.0.0:8080"
 	if p := os.Getenv("PORT"); p != "" {

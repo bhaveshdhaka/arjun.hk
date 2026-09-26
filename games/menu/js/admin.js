@@ -1,7 +1,8 @@
-import { SLOTS, STATE_LABELS, payLabel } from './clock.js?v=09251504';
+import { SLOTS, STATE_LABELS, payLabel } from './clock.js?v=09260025';
+import * as snd from './sounds.js?v=09260025';
 
 const API = 'https://api.arjun.hk';
-export const ACTIONS = ['login', 'logout', 'tab', 'additem', 'del', 'up', 'down', 'sold', 'photo', 'save', 'tables-inc', 'tables-dec', 'ordnext', 'dismissmsg', 'reload-menu', 'draft-restore', 'draft-discard', 'conflict-overwrite', 'conflict-discard', 'undo', 'sort', 'emopick', 'emochoose', 'emoclose'];
+export const ACTIONS = ['login', 'logout', 'tab', 'additem', 'del', 'up', 'down', 'sold', 'photo', 'save', 'tables-inc', 'tables-dec', 'ordnext', 'dismissmsg', 'reload-menu', 'draft-restore', 'draft-discard', 'conflict-overwrite', 'conflict-discard', 'undo', 'sort', 'emopick', 'emochoose', 'emoclose', 'cleardone', 'clearone', 'jto', 'altsound', 'notify'];
 
 export const STATUS_FLOW = ['pending', 'cooking', 'completed'];
 
@@ -46,6 +47,9 @@ const state = {
   emojiFor: null,  // item id whose emoji picker is open
   saving: false,   // a PUT is in flight
   autosaveTimer: null,
+  confirmClearDone: false,
+  confirmClearTimer: null,
+  lastLiveIds: null, // ids of open tickets on the previous poll (alerts)
 };
 
 const DRAFT_KEY = 'menu.draft';
@@ -116,11 +120,11 @@ let rootEl = null;
 function toastHTML() {
   if (!state.msg) return '';
   const extra = state.draftOffer
-    ? ' <button class="tool" data-act="draft-restore">Restore draft</button> <button class="tool" data-act="draft-discard">Discard</button>'
+    ? ' <button class="tool" data-act="draft-restore" role="button">Restore draft</button> <button class="tool" data-act="draft-discard">Discard</button>'
     : state.undoOffer
       ? ' <button class="tool" data-act="undo">Undo</button>'
       : '';
-  return `<div id="toast" class="toast" data-act="dismissmsg">${esc(state.msg)}${extra}</div>`;
+  return `<div id="toast" class="toast" data-act="dismissmsg" role="status" aria-live="polite">${esc(state.msg)}${extra}</div>`;
 }
 
 function paint() {
@@ -200,6 +204,10 @@ function shellHTML() {
       <button class="tab${state.tab === 'menu' ? ' on' : ''}" data-act="tab" data-key="menu" role="tab">📋 Menu</button>
       <button class="tab${state.tab === 'tables' ? ' on' : ''}" data-act="tab" data-key="tables" role="tab">🪑 Tables</button>
       <button class="tab${state.tab === 'orders' ? ' on' : ''}" data-act="tab" data-key="orders" role="tab">🧾 Orders<span id="ordCount"></span></button>
+    </div>
+    <div class="altheads">
+      <button class="chip-alt" data-act="altsound" title="${state.soundOn ? 'Turn alerts off' : 'Turn alerts on'}">${state.soundOn ? '🔔 Alerts on' : '🔇 Alerts off'}</button>
+      <span class="emptynote slight" aria-live="polite">${state.soundOn ? 'bell rings for new orders' : 'alerts muted'}</span>
     </div>
     <div id="tabBody"></div>`;
 }
@@ -298,9 +306,9 @@ function cardHTML(it) {
           </select>
         </div>
         <div class="mi-tools">
-          <button class="sw${it.soldOut ? ' off' : ''}" data-act="sold" data-id="${esc(it.id)}" role="switch" aria-checked="${it.soldOut ? 'true' : 'false'}" aria-label="${it.soldOut ? `${it.name} is sold out — tap to make available` : `${it.name} is available — tap to mark sold out`}">
+          <button class="sw" data-act="sold" data-id="${esc(it.id)}" role="switch" aria-checked="${it.soldOut ? 'true' : 'false'}" aria-label="${it.soldOut ? `${it.name} is sold out — tap to make available` : `${it.name} is available — tap to mark sold out`}">
             <span class="sw-pill"><span class="sw-dot"></span></span>
-            <span class="sw-lbl">${it.soldOut ? 'Sold out' : 'Available'}</span>
+            <span class="sw-lbl">Availability: <span class="sw-state">${it.soldOut ? 'Sold out' : 'On'}</span></span>
           </button>
           <span class="tool-sp"></span>
           <button class="tool" data-act="up" data-id="${esc(it.id)}" aria-label="Move up">↑</button>
@@ -376,14 +384,41 @@ function tablesTabHTML() {
 
 /* ---------- orders tab ---------- */
 
+function ageLabel(o) {
+  const mins = Math.max(0, Math.round((Date.now() - Number(o.at || 0)) / 60000));
+  if (mins <= 0) return 'just now';
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  return `${h} h ${mins % 60} min`;
+}
+
+function isLate(o) {
+  const mins = Math.max(0, Math.round((Date.now() - Number(o.at || 0)) / 60000));
+  return o.status !== 'completed' && mins >= 10;
+}
+
+function servedStripHTML(o) {
+  const when = new Date(o.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Hong_Kong' });
+  const rm = state.confirmDel === o.id ? `<button class="sstrip-x sure" data-act="clearone" data-id="${esc(o.id)}">Sure?</button>` : `<button class="sstrip-x" data-act="clearone" data-id="${esc(o.id)}" aria-label="Delete ticket ${esc(o.id)}">✕</button>`;
+  return `
+    <div class="sstrip">
+      <span class="ss-table">🛎️ Table ${esc(o.table)}</span>
+      <span class="ss-total">$${esc(o.total)}</span>
+      <span class="ss-pay">${esc(payLabel(o.pay))}</span>
+      <span class="ss-when">${esc(when)}</span>
+      <span class="tool-sp"></span>
+      ${rm}
+    </div>`;
+}
+
 function orderCardHTML(o) {
-  const done = o.status === 'completed';
   const next = o.status === 'pending' ? 'cooking' : o.status === 'cooking' ? 'completed' : null;
   const when = new Date(o.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Hong_Kong' });
   return `
-    <div class="ord${done ? ' done' : ''}" data-ord="${esc(o.id)}">
+    <div class="ord${isLate(o) ? ' late' : ''}" data-ord="${esc(o.id)}">
       <div class="ord-top">
         <span class="ord-table">🍽️ Table <b>${esc(o.table)}</b></span>
+        <span class="ord-age${isLate(o) ? ' urg' : ''}">⏱ ${esc(ageLabel(o))}${isLate(o) ? ' — waiting too long!' : ''}</span>
         <span class="ord-when">${esc(when)}</span>
         <span class="ord-state ${esc(o.status)}">${esc(STATE_LABELS[o.status] || o.status)}</span>
       </div>
@@ -391,22 +426,34 @@ function orderCardHTML(o) {
         ${(o.items || []).map((l) => `<div>${esc(l.qty)}× ${esc(l.name)} <span class="ol-price">$${esc((Number(l.price) || 0) * (Number(l.qty) || 0))}</span></div>`).join('')}
       </div>
       <div class="ord-foot">
-        <span>Total <b>$${esc(o.total)}</b> · ${esc(payLabel(o.pay))}</span>
+        <span class="ord-total">Total <b>$${esc(o.total)}</b></span>
+        <span class="ord-pay">💳 paying <b>${esc(payLabel(o.pay))}</b></span>
       </div>
       ${o.note ? `<div class="ord-note">📝 ${esc(o.note)}</div>` : ''}
-      ${next ? `<button class="bigbtn${next === 'cooking' ? ' warm' : ''}" data-act="ordnext" data-id="${esc(o.id)}" data-next="${esc(next)}">
-        ${next === 'cooking' ? '🍳 Start cooking' : '✓ Complete'}</button>` : ''}
+      ${next ? `<button class="bigbtn${next === 'cooking' ? ' warm' : ''}" data-act="ordnext" data-id="${esc(o.id)}" data-next="${esc(next)}" aria-label="${next === 'cooking' ? 'Kitchen started cooking for table ' : 'Food served for table '}${esc(o.table)}">
+        ${next === 'cooking' ? '🍳 Start cooking' : '🛎️ Mark served'}</button>` : ''}
+    </div>`;
+}
+
+function openTablesStripHTML(live) {
+  if (!live.length) return '';
+  return `
+    <div class="tablestrip" aria-label="Open tables summary">
+      ${live.map((o) => `<button class="tchip" data-jto="t${esc(o.table)}" data-act="jto" data-id="${esc(o.id)}">Table ${esc(o.table)} · $${esc(o.total)} · ${esc(payLabel(o.pay))}</button>`).join('')}
     </div>`;
 }
 
 function ordersHTML() {
   const live = state.orders.filter((o) => o.status !== 'completed');
   const done = state.orders.filter((o) => o.status === 'completed');
+  const explain = '<div class="emptynote slight">Tap 🍳 when you start cooking · tap 🛎️ when the food is served. Served tickets stay here until you clear them (24 h server safety-net).</div>';
   return `
     ${toastHTML()}
+    ${openTablesStripHTML(live)}
     <div id="ordersList">
+    ${done.length ? `<div class="done-head">🛎️ Served (${done.length}) <button class="tool danger${state.confirmClearDone ? ' sure' : ''}" data-act="cleardone">${state.confirmClearDone ? 'Sure? Wipe them' : 'Clear done'}</button></div>${done.map(servedStripHTML).join('')}` : ''}
+    ${explain}
     ${live.length ? live.map(orderCardHTML).join('') : '<div class="emptynote">No open orders — kitchen is quiet 🎈</div>'}
-    ${done.length ? `<div class="done-head">Done (${done.length})</div>${done.map(orderCardHTML).join('')}` : ''}
     </div>`;
 }
 
@@ -438,8 +485,31 @@ async function loadMenu() {
 
 async function loadOrders() {
   const r = await api('/v1/orders');
-  if (r.ok && Array.isArray(r.data)) state.orders = r.data;
+  if (r.ok && Array.isArray(r.data)) {
+    const previous = state.lastLiveIds;
+    state.orders = r.data;
+    const liveIds = state.orders.filter((o) => o.status !== 'completed').map((o) => o.id);
+    if (previous) {
+      const fresh = liveIds.filter((id) => !previous.includes(id));
+      if (fresh.length) {
+        state.unseen = (state.unseen || 0) + fresh.length;
+        for (let i = 0; i < Math.min(fresh.length, 2); i++) {
+          window.setTimeout(() => {
+            snd.newOrderBell();
+            snd.vibrate(80);
+          }, i * 350);
+        }
+        window.setTimeout(updateTitleBadge, 100);
+      }
+    }
+    state.lastLiveIds = liveIds;
+  }
   schedulePoll();
+}
+
+function updateTitleBadge() {
+  const base = 'Kitchen Admin — Baby Boy\'s Restaurant';
+  document.title = state.unseen ? `🔴 ${state.unseen} new order${state.unseen > 1 ? 's' : ''} — Kitchen Admin` : base;
 }
 
 function schedulePoll() {
@@ -707,10 +777,84 @@ function toggleSold(id) {
   saveDraft();
 }
 
+/* ---------- served-board actions ---------- */
+
+function clearServedConfirm() {
+  const clearBtn = rootEl.querySelector('[data-act="cleardone"]');
+  if (!state.confirmClearDone) {
+    state.confirmClearDone = true;
+    if (clearBtn) {
+      clearBtn.classList.add('sure');
+      clearBtn.textContent = 'Sure? Wipe them';
+      if (state.confirmClearTimer) clearTimeout(state.confirmClearTimer);
+      state.confirmClearTimer = setTimeout(async () => {
+        state.confirmClearDone = false;
+        if (state.tab === 'orders') renderTab();
+      }, 3000);
+    }
+    return;
+  }
+  state.confirmClearDone = false;
+  if (state.confirmClearTimer) clearTimeout(state.confirmClearTimer);
+  void (async () => {
+    try {
+      const res = await fetch(`${API}/v1/orders/clear`, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + state.token, 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      if (res.ok) {
+        await loadOrders();
+        paint();
+      } else {
+        setMsg('Could not clear — try again');
+      }
+    } catch (e) {
+      setMsg("Can't reach the server");
+    }
+  })();
+}
+
+async function clearOne(id) {
+  const clearBtn = rootEl && rootEl.querySelector(`[data-act="clearone"][data-id="${esc(id)}"]`);
+  if (state.confirmDel !== id) {
+    state.confirmDel = id;
+    if (clearBtn) {
+      clearBtn.classList.add('sure');
+      clearBtn.textContent = 'Sure?';
+      if (state.confirmClearTimer) clearTimeout(state.confirmClearTimer);
+      state.confirmClearTimer = setTimeout(() => {
+        state.confirmDel = null;
+        if (state.tab === 'orders') renderTab();
+      }, 3000);
+    }
+    return;
+  }
+  state.confirmDel = null;
+  try {
+    const res = await fetch(`${API}/v1/orders/clear`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + state.token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (res.ok) {
+      state.orders = state.orders.filter((o) => o.id !== id);
+      paint();
+    } else {
+      setMsg('Could not remove that ticket');
+    }
+  } catch (e) {
+    setMsg("Can't reach the server");
+  }
+}
+
 /* ---------- events ---------- */
 
 export async function init() {
   state.token = lread('menu.adminToken', null);
+  state.soundOn = lread('admin.sound', true);
+  snd.setSoundEnabled(state.soundOn);
+  snd.unlockAudio();
   rootEl = document.getElementById('app');
   const picker = document.createElement('input');
   picker.type = 'file';
@@ -745,6 +889,13 @@ export async function init() {
     const act = btn.dataset.act;
     if (act === 'dismissmsg') { setMsg(''); return; }
     if (!state.token) return;
+    if (act === 'cleardone') { clearServedConfirm(); return; }
+    if (act === 'clearone') { clearOne(btn.dataset.id); return; }
+    if (act === 'jto') {
+      const card = rootEl.querySelector(`[data-ord="${esc(btn.dataset.id)}"]`);
+      if (card && card.scrollIntoView) card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
     if (act === 'sort') {
       state.sortBy = btn.dataset.key;
       renderTab();
@@ -781,10 +932,26 @@ export async function init() {
     if (act === 'tab') {
       if (state.tab !== btn.dataset.key) {
         state.tab = btn.dataset.key;
+        if (state.tab === 'orders') { state.unseen = 0; updateTitleBadge(); }
         const tabs = rootEl.querySelectorAll('.tab');
         tabs.forEach((t) => t.classList.toggle('on', t.dataset.key === state.tab));
         renderTab();
       }
+      return;
+    }
+    if (act === 'altsound') {
+      state.soundOn = !state.soundOn;
+      lwrite('admin.sound', state.soundOn);
+      snd.setSoundEnabled(state.soundOn);
+      const chip = rootEl.querySelector('[data-act="altsound"]');
+      if (chip) { chip.textContent = state.soundOn ? '🔔' : '🔇'; chip.title = state.soundOn ? 'Turn alerts off' : 'Turn alerts on'; }
+      snd.unlockAudio();
+      setMsg(state.soundOn ? 'Alerts on — the bell rings for new orders 🔔' : 'Alerts off 🔇');
+      return;
+    }
+    if (act === 'notify') {
+      snd.unlockAudio();
+      setMsg('Alerts ready 🔔');
       return;
     }
     if (act === 'additem') { addItem(); return; }
@@ -849,6 +1016,10 @@ export async function init() {
         if (res.ok) {
           await loadOrders();
           renderOrders();
+          if (btn.dataset.next === 'completed') {
+            snd.servedChirp();
+            snd.vibrate(50);
+          }
         } else {
           setMsg('Could not update that order');
         }

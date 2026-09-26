@@ -10,7 +10,7 @@ for f in games/menu/js/menu.js games/menu/js/admin.js; do
   sed -i -E "s|from '\./clock\.js(\?v=[0-9a-zA-Z]+)?'|from './clock.js?v=$V'|g" "$f"
 done
 
-files="index.html admin.html games/index.html games/flags/index.html games/flags/js/quiz.js games/flags/stats.html games/assets/js/engine.js games/menu/js/menu.js games/menu/js/admin.js games/menu/js/clock.js"
+files="index.html admin.html games/index.html games/flags/index.html games/flags/js/quiz.js games/flags/stats.html games/assets/js/engine.js games/menu/js/menu.js games/menu/js/admin.js games/menu/js/clock.js games/menu/js/sounds.js"
 for f in $files; do
   sed -i -E "s/\?v=[0-9a-zA-Z]+/?v=$V/g" "$f"
 done

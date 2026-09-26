@@ -450,6 +450,21 @@ async function bootAdmin({ storage = null, menu = null, orders = [], extraRoutes
       respond: () => { apiCalls.push(['orders-get', null]); return { status: 200, json: myOrders.map((o) => ({ ...o })) }; },
     },
     {
+      method: 'POST', part: '/v1/orders/clear',
+      respond: ({ body }) => {
+        apiCalls.push(['ord-clear', body]);
+        if (body && body.id) {
+          const kept = myOrders.filter((o) => o.id !== body.id);
+          myOrders.splice(0, myOrders.length, ...kept);
+          return { status: 200, json: { cleared: 1 } };
+        }
+        const clearedCount = myOrders.filter((o) => o.status === 'completed').length;
+        const kept = myOrders.filter((o) => o.status !== 'completed');
+        myOrders.splice(0, myOrders.length, ...kept);
+        return { status: 200, json: { cleared: clearedCount } };
+      },
+    },
+    {
       method: 'POST', part: '/v1/orders/status',
       respond: ({ body }) => {
         apiCalls.push(['ord-status', body]);
@@ -458,6 +473,7 @@ async function bootAdmin({ storage = null, menu = null, orders = [], extraRoutes
         return { status: 200, json: hit || { id: body.id, status: body.status } };
       },
     },
+
   ]);
   globalThis.Image = class { set src(_v) {} };
   const admin = await loadModule('games/menu/js/admin.js', bootId);
@@ -562,7 +578,7 @@ async function s21_admin_menu_edit_and_save() {
   dispatch(sold, 'click');
   const soldRow = querySelectorAll(root, '.mi')[0]; // rows re-render on toggle
   const soldBtn = querySelector(soldRow, '[data-act="sold"]');
-  MENU_OK(String((soldBtn && soldBtn.attrs.class) || '').includes('off'), 'admin editor: sold-out toggles (switch marks off)');
+  MENU_OK((soldBtn && soldBtn.attrs['aria-checked']) === 'true', 'admin editor: sold-out toggles (aria-checked flips true)');
   const before = querySelectorAll(root, '.mi').map((r) => r.dataset.mi);
   dispatch(querySelector(first, '[data-act="down"]'), 'click');
   const after = querySelectorAll(root, '.mi').map((r) => r.dataset.mi);
@@ -658,7 +674,7 @@ async function s24_menu_dead_buttons() {
   dispatch(querySelector(da.doc, '#pinForm'), 'submit');
   await tick2();
   await tick2();
-  const adminActions = ['login', 'logout', 'tab', 'additem', 'del', 'up', 'down', 'sold', 'photo', 'save', 'tables-inc', 'tables-dec', 'ordnext', 'dismissmsg', 'reload-menu', 'draft-restore', 'draft-discard', 'conflict-overwrite', 'conflict-discard', 'undo', 'sort', 'emopick', 'emochoose', 'emoclose'];
+  const adminActions = ['login', 'logout', 'tab', 'additem', 'del', 'up', 'down', 'sold', 'photo', 'save', 'tables-inc', 'tables-dec', 'ordnext', 'dismissmsg', 'reload-menu', 'draft-restore', 'draft-discard', 'conflict-overwrite', 'conflict-discard', 'undo', 'sort', 'emopick', 'emochoose', 'emoclose', 'cleardone', 'clearone', 'jto', 'altsound', 'notify'];
   const collectActs = (el, out = []) => {
     if (el.attrs && el.attrs['data-act']) out.push(el.attrs['data-act']);
     (el.children || []).forEach((c) => collectActs(c, out));
@@ -844,6 +860,34 @@ async function s30_admin_price_and_emoji_sane() {
 // (no free-text path: only picker chips can set emoji)
 }
 
+async function s31_served_board_and_clear() {
+  const base = Date.now();
+  const orders = [
+    { id: 'o1', table: 3, items: [{ id: 'cheese', name: 'Cheese', qty: 2, price: 13 }], total: 26, pay: 'octopus', at: base - 12 * 60000, status: 'completed' },
+    { id: 'o2', table: 5, items: [{ id: 'bagel', name: 'Bagel', qty: 1, price: 20 }], total: 20, pay: 'cash', at: base - 14 * 60000, status: 'cooking' },
+  ];
+  const { root, doc, timers } = await bootAdmin({ orders });
+  querySelector(doc, '#pinInput').value = '4321';
+  dispatch(querySelector(doc, '#pinForm'), 'submit');
+  await tick2();
+  await tick2();
+  dispatch(querySelectorAll(doc, '[data-act="tab"]').find((t) => t.dataset.key === 'orders'), 'click');
+  MENU_OK(root.textContent.includes('🛎️ Served (1)'), 'served: completed ticket opens the strip section');
+  MENU_OK(root.textContent.includes('Clear done'), 'served: Clear-done affordance visible');
+  MENU_OK(root.textContent.includes('⏱'), 'served: live age clock on tickets');
+  MENU_OK(root.textContent.includes('waiting too long'), 'served: late badge shows on old pending ticket');
+  MENU_OK(root.textContent.includes('Total'), 'served: total visible per ticket');
+  MENU_OK(root.textContent.includes('paying'), 'served: pay method prominent (paying Cash/Octopus phrasing)');
+  // clear flow: first tap arms, second wipes
+  dispatch(querySelector(root, '[data-act="cleardone"]'), 'click');
+  MENU_OK(/Sure\? Wipe them/.test(root.textContent || ''), 'clear: first tap arms with Sure? Wipe them');
+  dispatch(querySelector(root, '[data-act="cleardone"]'), 'click');
+  await tick2();
+  const clearCall = apiCalls.find(([k]) => k === 'ord-clear');
+  MENU_OK(!!clearCall && clearCall[0] === 'ord-clear' && JSON.stringify(clearCall[1] || {}) === '{}', 'clear: second tap posts the wipe');
+  await tick2();
+}
+
 const scenarios = [
   s1_intro_fresh, s2_full_session, s3_wrong_tip_and_continue, s4_typein_and_toggle,
   s5_wrong_pin_guest_isolation, s6_correct_pin_sync_and_signout,
@@ -856,6 +900,7 @@ const scenarios = [
   s25_admin_delete_confirm_undo, s26_admin_save_blocked_when_load_fails,
   s27_admin_conflict_409_keeps_draft, s28_admin_expired_token_back_to_gate,
   s29_admin_draft_restore, s30_admin_price_and_emoji_sane,
+  s31_served_board_and_clear,
 ];
 for (const s of scenarios) {
   try { await s(); await tick(); await tick(); } catch (e) { fails.push(s.name); console.error(`FAIL - ${s.name} threw: ${(e && e.message) || e}`, String(e.stack || '').split('\n').slice(1, 4).join(' | ')); }

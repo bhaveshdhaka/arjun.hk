@@ -1,5 +1,5 @@
-import { Store } from './store.js?v=09251504';
-import { toggleTheme } from './theme.js?v=09251504';
+import { Store } from './store.js?v=09260025';
+import { toggleTheme } from './theme.js?v=09260025';
 
 const registry = new Map();
 const ptsFor = (q, ms) => (q && q.type === 'typein' ? 150 : 100) + Math.max(0, 50 - Math.floor(ms / 1000) * 5);

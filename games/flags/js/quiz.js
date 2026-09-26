@@ -1,7 +1,7 @@
-import { QuizEngine } from '../../assets/js/engine.js?v=09251504';
-import { makeSpeaker } from '../../assets/js/pronunciation.js?v=09251504';
-import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair, checkTypein, tidbitFor } from './build.js?v=09251504';
-import { REGIONS } from './data.js?v=09251504';
+import { QuizEngine } from '../../assets/js/engine.js?v=09260025';
+import { makeSpeaker } from '../../assets/js/pronunciation.js?v=09260025';
+import { buildQuestions, describe, byRegion, WORLD_COUNT, GLOBE, applyResult, weakness, explainPair, checkTypein, tidbitFor } from './build.js?v=09260025';
+import { REGIONS } from './data.js?v=09260025';
 
 const speak = makeSpeaker(
   typeof speechSynthesis !== 'undefined' ? speechSynthesis : null,

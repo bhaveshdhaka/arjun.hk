@@ -316,6 +316,58 @@ func (o *orderStore) add(ord Order) error {
 	return o.doc.writeLocked(all)
 }
 
+func (o *orderStore) clearServed() (int, error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	all, err := o.listLocked()
+	if err != nil {
+		return 0, err
+	}
+	kept := make([]Order, 0, len(all))
+	cleared := 0
+	for _, ord := range all {
+		if ord.Status == "completed" {
+			cleared++
+			continue
+		}
+		kept = append(kept, ord)
+	}
+	if len(kept) != len(all) {
+		if err := o.doc.writeLocked(kept); err != nil {
+			return 0, err
+		}
+	}
+	return cleared, nil
+}
+
+func (o *orderStore) clearServedOne(id string) (int, error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	all, err := o.listLocked()
+	if err != nil {
+		return 0, err
+	}
+	kept := make([]Order, 0, len(all))
+	cleared := 0
+	for _, ord := range all {
+		if ord.ID == id {
+			if ord.Status != "completed" {
+				return 0, fmt.Errorf("order is not served yet")
+			}
+			cleared++
+			continue
+		}
+		kept = append(kept, ord)
+	}
+	if cleared == 0 {
+		return 0, fmt.Errorf("order not found")
+	}
+	if err := o.doc.writeLocked(kept); err != nil {
+		return 0, err
+	}
+	return cleared, nil
+}
+
 func (o *orderStore) setStatus(id, status string) (Order, error) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -429,7 +481,7 @@ func (s *apiServer) handleImageGet(w http.ResponseWriter, r *http.Request) {
 func (s *apiServer) handleOrderCreate(w http.ResponseWriter, r *http.Request) {
 	ip := clientIP(r)
 	if s.orderIP.blocked(ip) {
-		writeErr(w, http.StatusTooManyRequests, "too many orders — wait five minutes")
+		writeErr(w, http.StatusTooManyRequests, "hold on, that's a few orders in a row — try again in five minutes 🙂")
 		return
 	}
 	var in struct {
@@ -527,6 +579,51 @@ func (s *apiServer) handleOrderList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, ords)
+}
+
+func (s *apiServer) handleOrderClear(w http.ResponseWriter, r *http.Request) {
+	if !s.auth(r) {
+		writeErr(w, http.StatusUnauthorized, "login first")
+		return
+	}
+	if r.Method != http.MethodPost {
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	var body struct {
+		ID string `json:"id"`
+	}
+	if r.ContentLength > 0 {
+		_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 8<<10)).Decode(&body)
+	}
+	if body.ID != "" {
+		s.handleOrderClearOne(w, r, body.ID)
+		return
+	}
+	cleared, err := s.orders.clearServed()
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, "clear failed")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"cleared": cleared})
+}
+
+// optional body {"id": "..."} clears exactly that one served ticket
+func (s *apiServer) handleOrderClearOne(w http.ResponseWriter, r *http.Request, id string) {
+	if !s.auth(r) {
+		writeErr(w, http.StatusUnauthorized, "login first")
+		return
+	}
+	if r.Method != http.MethodPost {
+		writeErr(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+	cleared, err := s.orders.clearServedOne(id)
+	if err != nil {
+		writeErr(w, http.StatusNotFound, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"cleared": cleared})
 }
 
 func (s *apiServer) handleOrderStatus(w http.ResponseWriter, r *http.Request) {

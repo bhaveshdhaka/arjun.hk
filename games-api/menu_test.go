@@ -30,7 +30,7 @@ func newTestServer(t *testing.T, pin string) *apiServer {
 	return &apiServer{
 		store: st, tokens: tokens,
 		limiter: newLoginLimiter(),
-		orderIP: &loginLimiter{fails: map[string][]time.Time{}, maxFail: 6, window: 5 * time.Minute},
+		orderIP: &loginLimiter{fails: map[string][]time.Time{}, maxFail: 12, window: 5 * time.Minute},
 		pin:     pin, menu: menu, orders: newOrderStore(dir),
 	}
 }
@@ -345,7 +345,7 @@ func TestOrderCreateHappyPath(t *testing.T) {
 	}
 	// bad table rejected + counts toward rate limit
 	ip := "1.2.3.4"
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 12; i++ {
 		r2 := httptest.NewRequest(http.MethodPost, "/v1/orders", bytes.NewBufferString(`{"table":99,"items":[{"id":"cheese","qty":1}],"pay":"cash"}`))
 		r2.RemoteAddr = ip + ":5555"
 		rr2 := httptest.NewRecorder()
@@ -517,6 +517,48 @@ func TestLoginBodyLimit(t *testing.T) {
 	s.handleLogin(rec, req)
 	if rec.Code != 400 {
 		t.Fatalf("oversized login body: expected 400, got %d", rec.Code)
+	}
+}
+
+func TestOrderClearServed(t *testing.T) {
+	s := newTestServer(t, "x")
+	tok := tokenFor(t, s)
+	_, _ = s.menu.update(Menu{Tables: 4, Items: []MenuItem{{ID: "a", Name: "A", Price: 5, Menu: "allday"}}}, 0)
+	// two live + one served (create three; complete the last)
+	for i := 0; i < 3; i++ {
+		rr := postOrder(t, s, map[string]any{"table": i + 1, "items": []map[string]any{{"id": "a", "qty": 1}}, "pay": "cash"})
+		if code(t, rr) != 200 {
+			t.Fatalf("order %d create: %d", i, rr.Code)
+		}
+	}
+	live, _ := s.orders.list()
+	last := live[len(live)-1].ID
+	_, _ = s.orders.setStatus(last, "completed")
+
+	// unauthenticated clear rejected
+	req0 := httptest.NewRequest(http.MethodPost, "/v1/orders/clear", nil)
+	rec0 := httptest.NewRecorder()
+	s.handleOrderClear(rec0, req0)
+	if rec0.Code != 401 {
+		t.Fatalf("clear unauth: expected 401, got %d", rec0.Code)
+	}
+
+	// authenticated clear removes only served
+	req := httptest.NewRequest(http.MethodPost, "/v1/orders/clear", nil)
+	req.Header.Set("Authorization", "Bearer "+tok)
+	rec := httptest.NewRecorder()
+	s.handleOrderClear(rec, req)
+	if rec.Code != 200 {
+		t.Fatalf("clear: %d", rec.Code)
+	}
+	var out map[string]int
+	_ = json.Unmarshal(rec.Body.Bytes(), &out)
+	if out["cleared"] != 1 {
+		t.Fatalf("expected 1 cleared, got %+v", out)
+	}
+	got, _ := s.orders.list()
+	if len(got) != 2 {
+		t.Fatalf("live orders should remain 2, got %d", len(got))
 	}
 }
 
